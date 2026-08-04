@@ -1,0 +1,16 @@
+node_modules
+dist
+dist-phone
+dist-phone-v*
+.npm-cache
+.pnpm-store
+.env
+.env.local
+dev-server*.log
+dev-server.pid
+ens-*.zip
+*.tsbuildinfo
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

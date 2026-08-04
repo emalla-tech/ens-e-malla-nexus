@@ -1,0 +1,32 @@
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { AppLayout } from './layouts/AppLayout';
+import { CalendarPage } from './pages/CalendarPage';
+import { CustomersPage } from './pages/CustomersPage';
+import { DashboardPage } from './pages/DashboardPage';
+import { GoalsPage } from './pages/GoalsPage';
+import { NotesPage } from './pages/NotesPage';
+import { NotificationsPage } from './pages/NotificationsPage';
+import { ProjectDetailPage } from './pages/ProjectDetailPage';
+import { ProjectsPage } from './pages/ProjectsPage';
+import { SettingsPage } from './pages/SettingsPage';
+import { TasksPage } from './pages/TasksPage';
+
+export default function App() {
+  return (
+    <Routes>
+      <Route element={<AppLayout />}>
+        <Route index element={<DashboardPage />} />
+        <Route path="tasks" element={<TasksPage />} />
+        <Route path="projects" element={<ProjectsPage />} />
+        <Route path="projects/:projectId" element={<ProjectDetailPage />} />
+        <Route path="customers" element={<CustomersPage />} />
+        <Route path="calendar" element={<CalendarPage />} />
+        <Route path="notes" element={<NotesPage />} />
+        <Route path="goals" element={<GoalsPage />} />
+        <Route path="notifications" element={<NotificationsPage />} />
+        <Route path="settings" element={<SettingsPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>
+    </Routes>
+  );
+}
