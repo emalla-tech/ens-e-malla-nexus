@@ -7,6 +7,21 @@ import type { Task } from '../types';
 
 type DraftTask = Omit<Task, 'id' | 'createdAt'>;
 
+function getSyncErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (error && typeof error === 'object' && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string' && message.trim()) {
+      return message;
+    }
+  }
+
+  return fallback;
+}
+
 export function useTasks() {
   const { cloudReady, user } = useAuth();
   const [tasks, setTasks] = usePersistentState<Task[]>('ens.tasks.v1', mockTasks);
@@ -32,7 +47,7 @@ export function useTasks() {
         void Promise.all(seedTasks.map((task) => saveCloudTask(task)));
       })
       .catch((error) => {
-        setSyncError(error instanceof Error ? error.message : 'Cloud sync failed.');
+        setSyncError(getSyncErrorMessage(error, 'Cloud sync failed.'));
         loadedCloudUser.current = null;
       })
       .finally(() => {
@@ -71,7 +86,7 @@ export function useTasks() {
     if (cloudReady && user) {
       setSyncError('');
       void saveCloudTask(newTask).catch((error) => {
-        setSyncError(error instanceof Error ? error.message : 'Task was saved locally but cloud sync failed.');
+        setSyncError(getSyncErrorMessage(error, 'Task was saved locally but cloud sync failed.'));
       });
     }
   }
@@ -85,7 +100,7 @@ export function useTasks() {
     if (nextTask && cloudReady && user) {
       setSyncError('');
       void saveCloudTask({ ...nextTask, ...updates }).catch((error) => {
-        setSyncError(error instanceof Error ? error.message : 'Task was updated locally but cloud sync failed.');
+        setSyncError(getSyncErrorMessage(error, 'Task was updated locally but cloud sync failed.'));
       });
     }
   }
@@ -95,7 +110,7 @@ export function useTasks() {
     if (cloudReady && user) {
       setSyncError('');
       void deleteCloudTask(taskId).catch((error) => {
-        setSyncError(error instanceof Error ? error.message : 'Task was deleted locally but cloud sync failed.');
+        setSyncError(getSyncErrorMessage(error, 'Task was deleted locally but cloud sync failed.'));
       });
     }
   }
@@ -109,7 +124,7 @@ export function useTasks() {
     if (nextTask && cloudReady && user) {
       setSyncError('');
       void saveCloudTask({ ...nextTask, status: 'Completed' }).catch((error) => {
-        setSyncError(error instanceof Error ? error.message : 'Task was completed locally but cloud sync failed.');
+        setSyncError(getSyncErrorMessage(error, 'Task was completed locally but cloud sync failed.'));
       });
     }
   }

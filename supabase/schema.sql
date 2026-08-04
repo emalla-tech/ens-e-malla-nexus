@@ -32,7 +32,7 @@ create table if not exists public.tasks (
   priority text not null default 'Medium' check (priority in ('Critical', 'High', 'Medium', 'Low')),
   status text not null default 'Pending' check (status in ('Pending', 'In Progress', 'Completed', 'Cancelled')),
   due_date date not null default current_date,
-  project_id text references public.projects(id) on delete set null,
+  project_id text,
   assignee text not null default 'John',
   schedule text not null default 'Morning' check (schedule in ('Morning', 'Afternoon', 'Evening')),
   created_at timestamptz not null default now(),
