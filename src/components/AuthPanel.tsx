@@ -14,6 +14,20 @@ export function AuthPanel() {
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  function getFriendlyAuthError(errorMessage: string) {
+    const normalizedMessage = errorMessage.toLowerCase();
+
+    if (normalizedMessage.includes('email not confirmed')) {
+      return 'This email exists but is still unconfirmed. In Supabase, confirm this user manually or delete the user and create the account again while email confirmation is OFF.';
+    }
+
+    if (normalizedMessage.includes('invalid login credentials')) {
+      return 'Email or password is not matching. If you created this account before disabling confirmation, confirm or delete it in Supabase, then try again.';
+    }
+
+    return errorMessage;
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage('');
@@ -26,11 +40,20 @@ export function AuthPanel() {
           : await signUpWithEmail(email, password, fullName);
 
       if (response.error) {
-        setMessage(response.error.message);
+        setMessage(getFriendlyAuthError(response.error.message));
         return;
       }
 
-      setMessage(mode === 'sign-in' ? 'Signed in. Cloud sync is active.' : 'Account created. Check your email if confirmation is enabled.');
+      if (mode === 'sign-up') {
+        setMessage(
+          response.data.session
+            ? 'Account created and signed in. Cloud sync is active.'
+            : 'Account created, but it is not signed in yet. If email confirmation is OFF, switch to Sign in and use the same email and password. If it still fails, confirm or delete this user in Supabase.',
+        );
+        return;
+      }
+
+      setMessage('Signed in. Cloud sync is active.');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Authentication failed.');
     } finally {
