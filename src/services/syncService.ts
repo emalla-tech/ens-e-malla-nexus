@@ -1,4 +1,4 @@
-import type { FollowUp, Project, Task } from '../types';
+import type { Customer, FollowUp, Project, Task } from '../types';
 import { getCurrentUserId } from './authService';
 import { supabase } from './supabase';
 
@@ -135,6 +135,71 @@ export async function deleteCloudProject(projectId: string) {
   const userId = await requireUserId();
 
   const { error } = await client.from('projects').delete().eq('id', projectId).eq('user_id', userId);
+  if (error) {
+    throw error;
+  }
+}
+
+export async function loadCloudCustomers(): Promise<Customer[]> {
+  const client = requireSupabase();
+  const userId = await requireUserId();
+
+  const { data, error } = await client
+    .from('customers')
+    .select('*')
+    .eq('user_id', userId)
+    .order('next_follow_up', { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map((customer) => ({
+    id: customer.id,
+    name: customer.name,
+    company: customer.company,
+    email: customer.email,
+    phone: customer.phone,
+    status: customer.status,
+    health: customer.health,
+    owner: customer.owner,
+    value: Number(customer.value),
+    lastContact: customer.last_contact,
+    nextFollowUp: customer.next_follow_up,
+    notes: customer.notes,
+  }));
+}
+
+export async function saveCloudCustomer(customer: Customer) {
+  const client = requireSupabase();
+  const userId = await requireUserId();
+
+  const { error } = await client.from('customers').upsert({
+    id: customer.id,
+    user_id: userId,
+    name: customer.name,
+    company: customer.company,
+    email: customer.email,
+    phone: customer.phone,
+    status: customer.status,
+    health: customer.health,
+    owner: customer.owner,
+    value: customer.value,
+    last_contact: customer.lastContact,
+    next_follow_up: customer.nextFollowUp,
+    notes: customer.notes,
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function deleteCloudCustomer(customerId: string) {
+  const client = requireSupabase();
+  const userId = await requireUserId();
+
+  const { error } = await client.from('customers').delete().eq('id', customerId).eq('user_id', userId);
   if (error) {
     throw error;
   }

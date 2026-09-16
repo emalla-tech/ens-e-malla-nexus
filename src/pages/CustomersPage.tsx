@@ -2,32 +2,54 @@ import {
   CalendarDays,
   Check,
   CheckCircle2,
+  Cloud,
   Clock3,
   Filter,
   Mail,
   Phone,
   Plus,
+  RefreshCw,
   Search,
   TriangleAlert,
   Users,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
-import { Badge } from '../components/PriorityBadge';
 import { Button } from '../components/Button';
+import { Badge } from '../components/PriorityBadge';
 import { StatCard } from '../components/StatCard';
-import { mockCustomers, mockFollowUps } from '../data/mockData';
-import { loadCloudFollowUps, saveCloudFollowUp } from '../services/syncService';
 import { useAuth } from '../hooks/useAuth';
+import { useCustomers } from '../hooks/useCustomers';
 import { usePersistentState } from '../hooks/usePersistentState';
-import type { CustomerStatus, FollowUp, Priority } from '../types';
+import { loadCloudFollowUps, saveCloudFollowUp } from '../services/syncService';
+import type { Customer, CustomerHealth, CustomerStatus, FollowUp, Priority } from '../types';
+import { getLiveFollowUps } from '../utils/crm';
 import { formatShortDate, isPastDue, isToday } from '../utils/date';
 
 type CustomerStatusFilter = CustomerStatus | 'All';
 type FollowUpStatusFilter = FollowUp['status'] | 'All';
+type CustomerDraft = Omit<Customer, 'id'>;
 type FollowUpDraft = Omit<FollowUp, 'id' | 'customer'>;
 
-const emptyDraft: FollowUpDraft = {
-  customerId: mockCustomers[0]?.id ?? '',
+const customerStatuses: CustomerStatus[] = ['Lead', 'Prospect', 'Active', 'At Risk', 'Dormant'];
+const customerHealthOptions: CustomerHealth[] = ['Healthy', 'Watch', 'Risk'];
+const priorities: Priority[] = ['Critical', 'High', 'Medium', 'Low'];
+
+const emptyCustomerDraft: CustomerDraft = {
+  name: '',
+  company: '',
+  email: '',
+  phone: '',
+  status: 'Lead',
+  health: 'Healthy',
+  owner: 'John',
+  value: 0,
+  lastContact: new Date().toISOString().slice(0, 10),
+  nextFollowUp: new Date().toISOString().slice(0, 10),
+  notes: '',
+};
+
+const emptyFollowUpDraft: FollowUpDraft = {
+  customerId: '',
   note: '',
   dueDate: new Date().toISOString().slice(0, 10),
   priority: 'Medium',
@@ -45,7 +67,7 @@ const customerStatusStyles: Record<CustomerStatus, string> = {
   Dormant: 'bg-red-100 text-red-800',
 };
 
-const healthStyles = {
+const healthStyles: Record<CustomerHealth, string> = {
   Healthy: 'bg-emerald-100 text-emerald-800',
   Watch: 'bg-orange-100 text-orange-800',
   Risk: 'bg-red-100 text-red-800',
@@ -53,19 +75,22 @@ const healthStyles = {
 
 export function CustomersPage() {
   const { cloudReady, user } = useAuth();
-  const [followUps, setFollowUps] = usePersistentState<FollowUp[]>('ens.followUps.v1', mockFollowUps);
+  const { customers, createCustomer, syncError, syncing, syncFromCloud } = useCustomers();
+  const [followUps, setFollowUps] = usePersistentState<FollowUp[]>('ens.followUps.v1', []);
   const [query, setQuery] = useState('');
   const [customerStatus, setCustomerStatus] = useState<CustomerStatusFilter>('All');
   const [followUpStatus, setFollowUpStatus] = useState<FollowUpStatusFilter>('All');
-  const [draft, setDraft] = useState<FollowUpDraft>(emptyDraft);
-  const loadedCloudUser = useRef<string | null>(null);
+  const [customerDraft, setCustomerDraft] = useState<CustomerDraft>(emptyCustomerDraft);
+  const [followUpDraft, setFollowUpDraft] = useState<FollowUpDraft>(emptyFollowUpDraft);
+  const [followUpSyncError, setFollowUpSyncError] = useState('');
+  const loadedFollowUpsUser = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!cloudReady || !user || loadedCloudUser.current === user.id) {
+    if (!cloudReady || !user || loadedFollowUpsUser.current === user.id) {
       return;
     }
 
-    loadedCloudUser.current = user.id;
+    loadedFollowUpsUser.current = user.id;
 
     loadCloudFollowUps()
       .then((cloudFollowUps) => {
@@ -74,15 +99,25 @@ export function CustomersPage() {
           return;
         }
 
-        void Promise.all(followUps.map((followUp) => saveCloudFollowUp(followUp).catch(() => undefined)));
+        void Promise.all(getLiveFollowUps(followUps).map((followUp) => saveCloudFollowUp(followUp).catch(() => undefined)));
       })
       .catch(() => {
-        loadedCloudUser.current = null;
+        loadedFollowUpsUser.current = null;
       });
   }, [cloudReady, followUps, setFollowUps, user]);
 
+  useEffect(() => {
+    if (followUpDraft.customerId || customers.length === 0) {
+      return;
+    }
+
+    setFollowUpDraft((current) => ({ ...current, customerId: customers[0].id }));
+  }, [customers, followUpDraft.customerId]);
+
+  const liveFollowUps = useMemo(() => getLiveFollowUps(followUps), [followUps]);
+
   const filteredCustomers = useMemo(() => {
-    return mockCustomers.filter((customer) => {
+    return customers.filter((customer) => {
       const matchesQuery = `${customer.name} ${customer.company} ${customer.owner} ${customer.notes}`
         .toLowerCase()
         .includes(query.toLowerCase());
@@ -90,11 +125,11 @@ export function CustomersPage() {
 
       return matchesQuery && matchesStatus;
     });
-  }, [query, customerStatus]);
+  }, [customers, query, customerStatus]);
 
   const filteredFollowUps = useMemo(() => {
-    return followUps.filter((followUp) => {
-      const customer = mockCustomers.find((item) => item.id === followUp.customerId);
+    return liveFollowUps.filter((followUp) => {
+      const customer = customers.find((item) => item.id === followUp.customerId);
       const matchesQuery = `${followUp.customer} ${followUp.note} ${followUp.owner} ${followUp.nextStep}`
         .toLowerCase()
         .includes(query.toLowerCase());
@@ -103,51 +138,78 @@ export function CustomersPage() {
 
       return matchesQuery && matchesStatus && matchesVisibleCustomer;
     });
-  }, [followUps, followUpStatus, query, filteredCustomers]);
+  }, [customers, filteredCustomers, followUpStatus, liveFollowUps, query]);
 
   const summary = useMemo(() => {
     return {
-      customers: mockCustomers.length,
-      dueToday: followUps.filter((followUp) => isToday(followUp.dueDate) && followUp.status !== 'Completed').length,
-      overdue: followUps.filter((followUp) => isPastDue(followUp.dueDate) && followUp.status !== 'Completed').length,
-      atRisk: mockCustomers.filter((customer) => customer.status === 'At Risk' || customer.health === 'Risk').length,
+      customers: customers.length,
+      dueToday: liveFollowUps.filter((followUp) => isToday(followUp.dueDate) && followUp.status !== 'Completed').length,
+      overdue: liveFollowUps.filter((followUp) => isPastDue(followUp.dueDate) && followUp.status !== 'Completed').length,
+      atRisk: customers.filter((customer) => customer.status === 'At Risk' || customer.health === 'Risk').length,
+      pipeline: customers.reduce((sum, customer) => sum + customer.value, 0),
     };
-  }, [followUps]);
+  }, [customers, liveFollowUps]);
+
+  function handleCreateCustomer(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!customerDraft.company.trim() || !customerDraft.name.trim()) {
+      return;
+    }
+
+    createCustomer({
+      ...customerDraft,
+      name: customerDraft.name.trim(),
+      company: customerDraft.company.trim(),
+      email: customerDraft.email.trim(),
+      phone: customerDraft.phone.trim(),
+      owner: customerDraft.owner.trim() || 'John',
+      value: Number(customerDraft.value) || 0,
+      notes: customerDraft.notes.trim(),
+    });
+    setCustomerDraft(emptyCustomerDraft);
+  }
 
   function handleCreateFollowUp(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const customer = mockCustomers.find((item) => item.id === draft.customerId);
+    const customer = customers.find((item) => item.id === followUpDraft.customerId);
 
-    if (!customer || !draft.note.trim() || !draft.nextStep.trim()) {
+    if (!customer || !followUpDraft.note.trim() || !followUpDraft.nextStep.trim()) {
       return;
     }
 
     const followUp: FollowUp = {
-      ...draft,
+      ...followUpDraft,
       id: crypto.randomUUID(),
       customer: customer.company,
-      note: draft.note.trim(),
-      nextStep: draft.nextStep.trim(),
-      owner: draft.owner.trim() || 'John',
+      note: followUpDraft.note.trim(),
+      nextStep: followUpDraft.nextStep.trim(),
+      owner: followUpDraft.owner.trim() || customer.owner || 'John',
     };
 
-    setFollowUps((current) => [followUp, ...current]);
+    setFollowUps((current) => [followUp, ...getLiveFollowUps(current)]);
     if (cloudReady && user) {
-      void saveCloudFollowUp(followUp).catch(() => undefined);
+      setFollowUpSyncError('');
+      void saveCloudFollowUp(followUp).catch((error) => {
+        setFollowUpSyncError(error instanceof Error ? error.message : 'Follow-up was saved locally but cloud sync failed.');
+      });
     }
-    setDraft({ ...emptyDraft, customerId: mockCustomers[0]?.id ?? '' });
+    setFollowUpDraft({ ...emptyFollowUpDraft, customerId: customers[0]?.id ?? '' });
   }
 
   function completeFollowUp(followUpId: string) {
-    const nextFollowUp = followUps.find((followUp) => followUp.id === followUpId);
+    const nextFollowUp = liveFollowUps.find((followUp) => followUp.id === followUpId);
     setFollowUps((current) =>
-      current.map((followUp) =>
+      getLiveFollowUps(current).map((followUp) =>
         followUp.id === followUpId ? { ...followUp, status: 'Completed' } : followUp,
       ),
     );
 
     if (nextFollowUp && cloudReady && user) {
-      void saveCloudFollowUp({ ...nextFollowUp, status: 'Completed' }).catch(() => undefined);
+      setFollowUpSyncError('');
+      void saveCloudFollowUp({ ...nextFollowUp, status: 'Completed' }).catch((error) => {
+        setFollowUpSyncError(error instanceof Error ? error.message : 'Follow-up was completed locally but cloud sync failed.');
+      });
     }
   }
 
@@ -158,14 +220,12 @@ export function CustomersPage() {
           <p className="text-sm font-bold uppercase tracking-[0.18em] text-brand-orange">Customers</p>
           <h1 className="mt-2 text-3xl font-black text-brand-black">CRM follow-up control</h1>
           <p className="mt-2 max-w-2xl text-gray-500">
-            Track customer relationships, account health, owners, next actions, and executive follow-ups.
+            Track real customer relationships, account health, owners, next actions, and executive follow-ups.
           </p>
         </div>
         <div className="rounded-md bg-brand-black px-4 py-3 text-white shadow-sm">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-orange">Pipeline value</p>
-          <p className="mt-1 text-2xl font-black">
-            ${mockCustomers.reduce((sum, customer) => sum + customer.value, 0).toLocaleString()}
-          </p>
+          <p className="mt-1 text-2xl font-black">${summary.pipeline.toLocaleString()}</p>
         </div>
       </section>
 
@@ -176,104 +236,273 @@ export function CustomersPage() {
         <StatCard label="At risk" value={summary.atRisk} icon={CheckCircle2} caption="Accounts to protect" />
       </section>
 
+      <section
+        className={`flex flex-col justify-between gap-3 rounded-md border p-4 shadow-sm sm:flex-row sm:items-center ${
+          syncError || followUpSyncError ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white'
+        }`}
+      >
+        <div className="flex gap-3">
+          <div
+            className={`grid h-10 w-10 shrink-0 place-items-center rounded-md ${
+              syncError || followUpSyncError ? 'bg-red-100 text-red-700' : 'bg-orange-50 text-brand-orange'
+            }`}
+          >
+            {syncError || followUpSyncError ? <TriangleAlert size={19} /> : <Cloud size={19} />}
+          </div>
+          <div>
+            <p className="font-bold text-brand-black">{syncError || followUpSyncError ? 'CRM sync needs attention' : 'CRM cloud sync'}</p>
+            <p className="mt-1 text-sm leading-6 text-gray-500">
+              {syncError || followUpSyncError || (syncing ? 'Syncing customers with Supabase...' : 'Signed-in devices can share customers and follow-ups through Supabase.')}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-brand-black ring-1 ring-gray-200 hover:bg-gray-50"
+          onClick={() => syncFromCloud()}
+        >
+          <RefreshCw size={16} />
+          Sync now
+        </button>
+      </section>
+
       <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-        <form onSubmit={handleCreateFollowUp} className="rounded-md border border-gray-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-black text-brand-black">New follow-up</h2>
-              <p className="mt-1 text-sm text-gray-500">Create the next customer action and assign an owner.</p>
+        <div className="grid gap-6">
+          <form onSubmit={handleCreateCustomer} className="rounded-md border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-black text-brand-black">New customer</h2>
+                <p className="mt-1 text-sm text-gray-500">Create the account once, then attach follow-ups to it.</p>
+              </div>
+              <Plus className="text-brand-orange" size={22} />
             </div>
-            <Plus className="text-brand-orange" size={22} />
-          </div>
 
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
-            <label className="space-y-2 md:col-span-2">
-              <span className="text-sm font-semibold text-gray-700">Customer</span>
-              <select
-                value={draft.customerId}
-                onChange={(event) => setDraft({ ...draft, customerId: event.target.value })}
-                className="min-h-11 w-full rounded-md border border-gray-200 bg-white px-3 outline-none focus:border-brand-orange"
-              >
-                {mockCustomers.map((customer) => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.company} - {customer.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <label className="space-y-2">
+                <span className="text-sm font-semibold text-gray-700">Company</span>
+                <input
+                  value={customerDraft.company}
+                  onChange={(event) => setCustomerDraft({ ...customerDraft, company: event.target.value })}
+                  className="min-h-11 w-full rounded-md border border-gray-200 px-3 outline-none focus:border-brand-orange"
+                  placeholder="Company name"
+                />
+              </label>
 
-            <label className="space-y-2 md:col-span-2">
-              <span className="text-sm font-semibold text-gray-700">Follow-up note</span>
-              <textarea
-                value={draft.note}
-                onChange={(event) => setDraft({ ...draft, note: event.target.value })}
-                className="min-h-24 w-full rounded-md border border-gray-200 px-3 py-2 outline-none focus:border-brand-orange"
-                placeholder="What needs to happen?"
-              />
-            </label>
+              <label className="space-y-2">
+                <span className="text-sm font-semibold text-gray-700">Contact name</span>
+                <input
+                  value={customerDraft.name}
+                  onChange={(event) => setCustomerDraft({ ...customerDraft, name: event.target.value })}
+                  className="min-h-11 w-full rounded-md border border-gray-200 px-3 outline-none focus:border-brand-orange"
+                  placeholder="Main contact"
+                />
+              </label>
 
-            <label className="space-y-2">
-              <span className="text-sm font-semibold text-gray-700">Due date</span>
-              <input
-                type="date"
-                value={draft.dueDate}
-                onChange={(event) => setDraft({ ...draft, dueDate: event.target.value })}
-                className="min-h-11 w-full rounded-md border border-gray-200 px-3 outline-none focus:border-brand-orange"
-              />
-            </label>
+              <label className="space-y-2">
+                <span className="text-sm font-semibold text-gray-700">Email</span>
+                <input
+                  type="email"
+                  value={customerDraft.email}
+                  onChange={(event) => setCustomerDraft({ ...customerDraft, email: event.target.value })}
+                  className="min-h-11 w-full rounded-md border border-gray-200 px-3 outline-none focus:border-brand-orange"
+                />
+              </label>
 
-            <label className="space-y-2">
-              <span className="text-sm font-semibold text-gray-700">Owner</span>
-              <input
-                value={draft.owner}
-                onChange={(event) => setDraft({ ...draft, owner: event.target.value })}
-                className="min-h-11 w-full rounded-md border border-gray-200 px-3 outline-none focus:border-brand-orange"
-              />
-            </label>
+              <label className="space-y-2">
+                <span className="text-sm font-semibold text-gray-700">Phone</span>
+                <input
+                  value={customerDraft.phone}
+                  onChange={(event) => setCustomerDraft({ ...customerDraft, phone: event.target.value })}
+                  className="min-h-11 w-full rounded-md border border-gray-200 px-3 outline-none focus:border-brand-orange"
+                />
+              </label>
 
-            <label className="space-y-2">
-              <span className="text-sm font-semibold text-gray-700">Priority</span>
-              <select
-                value={draft.priority}
-                onChange={(event) => setDraft({ ...draft, priority: event.target.value as Priority })}
-                className="min-h-11 w-full rounded-md border border-gray-200 bg-white px-3 outline-none focus:border-brand-orange"
-              >
-                <option>Critical</option>
-                <option>High</option>
-                <option>Medium</option>
-                <option>Low</option>
-              </select>
-            </label>
+              <label className="space-y-2">
+                <span className="text-sm font-semibold text-gray-700">Status</span>
+                <select
+                  value={customerDraft.status}
+                  onChange={(event) => setCustomerDraft({ ...customerDraft, status: event.target.value as CustomerStatus })}
+                  className="min-h-11 w-full rounded-md border border-gray-200 bg-white px-3 outline-none focus:border-brand-orange"
+                >
+                  {customerStatuses.map((status) => (
+                    <option key={status}>{status}</option>
+                  ))}
+                </select>
+              </label>
 
-            <label className="space-y-2">
-              <span className="text-sm font-semibold text-gray-700">Channel</span>
-              <select
-                value={draft.channel}
-                onChange={(event) => setDraft({ ...draft, channel: event.target.value as FollowUp['channel'] })}
-                className="min-h-11 w-full rounded-md border border-gray-200 bg-white px-3 outline-none focus:border-brand-orange"
-              >
-                <option>Email</option>
-                <option>Call</option>
-                <option>Meeting</option>
-                <option>WhatsApp</option>
-              </select>
-            </label>
+              <label className="space-y-2">
+                <span className="text-sm font-semibold text-gray-700">Health</span>
+                <select
+                  value={customerDraft.health}
+                  onChange={(event) => setCustomerDraft({ ...customerDraft, health: event.target.value as CustomerHealth })}
+                  className="min-h-11 w-full rounded-md border border-gray-200 bg-white px-3 outline-none focus:border-brand-orange"
+                >
+                  {customerHealthOptions.map((health) => (
+                    <option key={health}>{health}</option>
+                  ))}
+                </select>
+              </label>
 
-            <label className="space-y-2 md:col-span-2">
-              <span className="text-sm font-semibold text-gray-700">Next step</span>
-              <input
-                value={draft.nextStep}
-                onChange={(event) => setDraft({ ...draft, nextStep: event.target.value })}
-                className="min-h-11 w-full rounded-md border border-gray-200 px-3 outline-none focus:border-brand-orange"
-                placeholder="Specific next action"
-              />
-            </label>
-          </div>
+              <label className="space-y-2">
+                <span className="text-sm font-semibold text-gray-700">Owner</span>
+                <input
+                  value={customerDraft.owner}
+                  onChange={(event) => setCustomerDraft({ ...customerDraft, owner: event.target.value })}
+                  className="min-h-11 w-full rounded-md border border-gray-200 px-3 outline-none focus:border-brand-orange"
+                />
+              </label>
 
-          <div className="mt-5 flex justify-end">
-            <Button type="submit">Create follow-up</Button>
-          </div>
-        </form>
+              <label className="space-y-2">
+                <span className="text-sm font-semibold text-gray-700">Value</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={customerDraft.value}
+                  onChange={(event) => setCustomerDraft({ ...customerDraft, value: Number(event.target.value) })}
+                  className="min-h-11 w-full rounded-md border border-gray-200 px-3 outline-none focus:border-brand-orange"
+                />
+              </label>
+
+              <label className="space-y-2">
+                <span className="text-sm font-semibold text-gray-700">Last contact</span>
+                <input
+                  type="date"
+                  value={customerDraft.lastContact}
+                  onChange={(event) => setCustomerDraft({ ...customerDraft, lastContact: event.target.value })}
+                  className="min-h-11 w-full rounded-md border border-gray-200 px-3 outline-none focus:border-brand-orange"
+                />
+              </label>
+
+              <label className="space-y-2">
+                <span className="text-sm font-semibold text-gray-700">Next follow-up</span>
+                <input
+                  type="date"
+                  value={customerDraft.nextFollowUp}
+                  onChange={(event) => setCustomerDraft({ ...customerDraft, nextFollowUp: event.target.value })}
+                  className="min-h-11 w-full rounded-md border border-gray-200 px-3 outline-none focus:border-brand-orange"
+                />
+              </label>
+
+              <label className="space-y-2 md:col-span-2">
+                <span className="text-sm font-semibold text-gray-700">Notes</span>
+                <textarea
+                  value={customerDraft.notes}
+                  onChange={(event) => setCustomerDraft({ ...customerDraft, notes: event.target.value })}
+                  className="min-h-24 w-full rounded-md border border-gray-200 px-3 py-2 outline-none focus:border-brand-orange"
+                  placeholder="Relationship context, risk, or opportunity"
+                />
+              </label>
+            </div>
+
+            <div className="mt-5 flex justify-end">
+              <Button type="submit">
+                <Plus size={16} />
+                Create customer
+              </Button>
+            </div>
+          </form>
+
+          <form onSubmit={handleCreateFollowUp} className="rounded-md border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-black text-brand-black">New follow-up</h2>
+                <p className="mt-1 text-sm text-gray-500">Create the next customer action and assign an owner.</p>
+              </div>
+              <Plus className="text-brand-orange" size={22} />
+            </div>
+
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <label className="space-y-2 md:col-span-2">
+                <span className="text-sm font-semibold text-gray-700">Customer</span>
+                <select
+                  value={followUpDraft.customerId}
+                  onChange={(event) => setFollowUpDraft({ ...followUpDraft, customerId: event.target.value })}
+                  className="min-h-11 w-full rounded-md border border-gray-200 bg-white px-3 outline-none focus:border-brand-orange"
+                  disabled={customers.length === 0}
+                >
+                  {customers.length === 0 ? <option value="">Create a customer first</option> : null}
+                  {customers.map((customer) => (
+                    <option key={customer.id} value={customer.id}>
+                      {customer.company} - {customer.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="space-y-2 md:col-span-2">
+                <span className="text-sm font-semibold text-gray-700">Follow-up note</span>
+                <textarea
+                  value={followUpDraft.note}
+                  onChange={(event) => setFollowUpDraft({ ...followUpDraft, note: event.target.value })}
+                  className="min-h-24 w-full rounded-md border border-gray-200 px-3 py-2 outline-none focus:border-brand-orange"
+                  placeholder="What needs to happen?"
+                />
+              </label>
+
+              <label className="space-y-2">
+                <span className="text-sm font-semibold text-gray-700">Due date</span>
+                <input
+                  type="date"
+                  value={followUpDraft.dueDate}
+                  onChange={(event) => setFollowUpDraft({ ...followUpDraft, dueDate: event.target.value })}
+                  className="min-h-11 w-full rounded-md border border-gray-200 px-3 outline-none focus:border-brand-orange"
+                />
+              </label>
+
+              <label className="space-y-2">
+                <span className="text-sm font-semibold text-gray-700">Owner</span>
+                <input
+                  value={followUpDraft.owner}
+                  onChange={(event) => setFollowUpDraft({ ...followUpDraft, owner: event.target.value })}
+                  className="min-h-11 w-full rounded-md border border-gray-200 px-3 outline-none focus:border-brand-orange"
+                />
+              </label>
+
+              <label className="space-y-2">
+                <span className="text-sm font-semibold text-gray-700">Priority</span>
+                <select
+                  value={followUpDraft.priority}
+                  onChange={(event) => setFollowUpDraft({ ...followUpDraft, priority: event.target.value as Priority })}
+                  className="min-h-11 w-full rounded-md border border-gray-200 bg-white px-3 outline-none focus:border-brand-orange"
+                >
+                  {priorities.map((priority) => (
+                    <option key={priority}>{priority}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="space-y-2">
+                <span className="text-sm font-semibold text-gray-700">Channel</span>
+                <select
+                  value={followUpDraft.channel}
+                  onChange={(event) => setFollowUpDraft({ ...followUpDraft, channel: event.target.value as FollowUp['channel'] })}
+                  className="min-h-11 w-full rounded-md border border-gray-200 bg-white px-3 outline-none focus:border-brand-orange"
+                >
+                  <option>Email</option>
+                  <option>Call</option>
+                  <option>Meeting</option>
+                  <option>WhatsApp</option>
+                </select>
+              </label>
+
+              <label className="space-y-2 md:col-span-2">
+                <span className="text-sm font-semibold text-gray-700">Next step</span>
+                <input
+                  value={followUpDraft.nextStep}
+                  onChange={(event) => setFollowUpDraft({ ...followUpDraft, nextStep: event.target.value })}
+                  className="min-h-11 w-full rounded-md border border-gray-200 px-3 outline-none focus:border-brand-orange"
+                  placeholder="Specific next action"
+                />
+              </label>
+            </div>
+
+            <div className="mt-5 flex justify-end">
+              <Button type="submit" disabled={customers.length === 0}>
+                Create follow-up
+              </Button>
+            </div>
+          </form>
+        </div>
 
         <section className="space-y-4">
           <div className="rounded-md border border-gray-200 bg-white p-4 shadow-sm">
@@ -297,11 +526,9 @@ export function CustomersPage() {
                   aria-label="Filter customers by status"
                 >
                   <option>All</option>
-                  <option>Lead</option>
-                  <option>Prospect</option>
-                  <option>Active</option>
-                  <option>At Risk</option>
-                  <option>Dormant</option>
+                  {customerStatuses.map((status) => (
+                    <option key={status}>{status}</option>
+                  ))}
                 </select>
               </label>
 
@@ -323,7 +550,7 @@ export function CustomersPage() {
           <div className="rounded-md border border-gray-200 bg-white p-5 shadow-sm">
             <h2 className="text-lg font-black text-brand-black">Follow-up queue</h2>
             <div className="mt-5 space-y-3">
-              {filteredFollowUps.map((followUp) => (
+              {filteredFollowUps.length > 0 ? filteredFollowUps.map((followUp) => (
                 <article key={followUp.id} className="rounded-md border border-gray-200 p-4">
                   <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
                     <div>
@@ -358,49 +585,62 @@ export function CustomersPage() {
                     </Button>
                   </div>
                 </article>
-              ))}
+              )) : (
+                <p className="rounded-md bg-gray-50 p-4 text-sm leading-6 text-gray-500">
+                  No live follow-ups yet. Create a customer, then add the next action.
+                </p>
+              )}
             </div>
           </div>
         </section>
       </section>
 
-      <section className="grid gap-5 lg:grid-cols-2">
-        {filteredCustomers.map((customer) => (
-          <article key={customer.id} className="rounded-md border border-gray-200 bg-white p-5 shadow-sm">
-            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-              <div>
-                <div className="flex flex-wrap gap-2">
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${customerStatusStyles[customer.status]}`}>
-                    {customer.status}
-                  </span>
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${healthStyles[customer.health]}`}>
-                    {customer.health}
-                  </span>
+      {filteredCustomers.length > 0 ? (
+        <section className="grid gap-5 lg:grid-cols-2">
+          {filteredCustomers.map((customer) => (
+            <article key={customer.id} className="rounded-md border border-gray-200 bg-white p-5 shadow-sm">
+              <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+                <div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${customerStatusStyles[customer.status]}`}>
+                      {customer.status}
+                    </span>
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${healthStyles[customer.health]}`}>
+                      {customer.health}
+                    </span>
+                  </div>
+                  <h2 className="mt-4 text-xl font-black text-brand-black">{customer.company}</h2>
+                  <p className="mt-1 text-sm font-semibold text-gray-600">{customer.name}</p>
                 </div>
-                <h2 className="mt-4 text-xl font-black text-brand-black">{customer.company}</h2>
-                <p className="mt-1 text-sm font-semibold text-gray-600">{customer.name}</p>
+                <p className="text-2xl font-black text-brand-black">${customer.value.toLocaleString()}</p>
               </div>
-              <p className="text-2xl font-black text-brand-black">${customer.value.toLocaleString()}</p>
-            </div>
 
-            <p className="mt-4 leading-7 text-gray-500">{customer.notes}</p>
+              <p className="mt-4 leading-7 text-gray-500">{customer.notes || 'No customer notes yet.'}</p>
 
-            <div className="mt-5 grid gap-3 text-sm text-gray-600 md:grid-cols-2">
-              <span className="inline-flex items-center gap-2">
-                <Mail size={16} />
-                {customer.email}
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <Phone size={16} />
-                {customer.phone}
-              </span>
-              <span>Owner: {customer.owner}</span>
-              <span>Last contact: {formatShortDate(customer.lastContact)}</span>
-              <span className="md:col-span-2">Next follow-up: {formatShortDate(customer.nextFollowUp)}</span>
-            </div>
-          </article>
-        ))}
-      </section>
+              <div className="mt-5 grid gap-3 text-sm text-gray-600 md:grid-cols-2">
+                <span className="inline-flex items-center gap-2">
+                  <Mail size={16} />
+                  {customer.email || 'No email'}
+                </span>
+                <span className="inline-flex items-center gap-2">
+                  <Phone size={16} />
+                  {customer.phone || 'No phone'}
+                </span>
+                <span>Owner: {customer.owner}</span>
+                <span>Last contact: {formatShortDate(customer.lastContact)}</span>
+                <span className="md:col-span-2">Next follow-up: {formatShortDate(customer.nextFollowUp)}</span>
+              </div>
+            </article>
+          ))}
+        </section>
+      ) : (
+        <section className="rounded-md border border-dashed border-gray-300 bg-white p-8 text-center">
+          <p className="text-lg font-black text-brand-black">No live customers yet</p>
+          <p className="mt-2 text-sm leading-6 text-gray-500">
+            Create your first customer to start building the CRM pipeline.
+          </p>
+        </section>
+      )}
     </div>
   );
 }

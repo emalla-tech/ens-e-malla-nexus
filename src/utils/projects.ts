@@ -4,10 +4,6 @@ export function isSeedTask(task: Task) {
   return /^task-\d+$/.test(task.id);
 }
 
-export function isSeedFollowUpId(id: string) {
-  return /^follow-up-\d+$/.test(id);
-}
-
 export function getLiveTasks(tasks: Task[]) {
   return tasks.filter((task) => !isSeedTask(task));
 }

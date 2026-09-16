@@ -15,13 +15,15 @@ import { Button } from '../components/Button';
 import { ProgressBar } from '../components/ProgressBar';
 import { StatCard } from '../components/StatCard';
 import { useAuth } from '../hooks/useAuth';
+import { useCustomers } from '../hooks/useCustomers';
 import { usePersistentState } from '../hooks/usePersistentState';
 import { useProjects } from '../hooks/useProjects';
 import { useTasks } from '../hooks/useTasks';
 import { loadCloudFollowUps } from '../services/syncService';
 import type { FollowUp, Task } from '../types';
+import { getLiveFollowUps } from '../utils/crm';
 import { formatLongDate, formatShortDate, isPastDue, isToday } from '../utils/date';
-import { getLiveTasks, isSeedFollowUpId, withProjectTaskStats } from '../utils/projects';
+import { getLiveTasks, withProjectTaskStats } from '../utils/projects';
 
 const priorityRank: Record<Task['priority'], number> = {
   Critical: 0,
@@ -48,6 +50,7 @@ export function DashboardPage() {
   const { cloudReady, user } = useAuth();
   const { tasks } = useTasks();
   const { projects } = useProjects();
+  const { customers } = useCustomers();
   const [followUps, setFollowUps] = usePersistentState<FollowUp[]>('ens.followUps.v1', []);
   const loadedFollowUpsUser = useRef<string | null>(null);
 
@@ -70,12 +73,11 @@ export function DashboardPage() {
   }, [cloudReady, setFollowUps, user]);
 
   const liveTasks = useMemo(() => getLiveTasks(tasks), [tasks]);
-  const liveFollowUps = useMemo(() => followUps.filter((followUp) => !isSeedFollowUpId(followUp.id)), [followUps]);
+  const liveFollowUps = useMemo(() => getLiveFollowUps(followUps), [followUps]);
 
   const tasksDueToday = liveTasks.filter((task) => isToday(task.dueDate) && task.status !== 'Completed');
   const completedTasks = liveTasks.filter((task) => task.status === 'Completed');
   const overdueTasks = liveTasks.filter((task) => isPastDue(task.dueDate) && task.status !== 'Completed');
-  const customerCount = new Set(liveFollowUps.map((followUp) => followUp.customerId || followUp.customer)).size;
 
   const bigThree = useMemo(() => {
     return liveTasks
@@ -213,7 +215,7 @@ export function DashboardPage() {
                 <h2 className="text-lg font-black text-brand-black">Customer follow-ups</h2>
               </div>
               <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-bold text-gray-600">
-                {customerCount} customers
+                {customers.length} customers
               </span>
             </div>
             <div className="mt-5 space-y-3">
