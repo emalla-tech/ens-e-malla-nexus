@@ -9,18 +9,117 @@ import {
   TriangleAlert,
   Users,
 } from 'lucide-react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { ProgressBar } from '../components/ProgressBar';
 import { StatCard } from '../components/StatCard';
-import { mockCustomers, mockFollowUps, mockMeetings, mockNotes, mockProjects, mockTasks } from '../data/mockData';
+import { mockProjects } from '../data/mockData';
+import { useAuth } from '../hooks/useAuth';
+import { usePersistentState } from '../hooks/usePersistentState';
+import { useTasks } from '../hooks/useTasks';
+import { loadCloudFollowUps } from '../services/syncService';
+import type { FollowUp, Task } from '../types';
 import { formatLongDate, formatShortDate, isPastDue, isToday } from '../utils/date';
 
+const priorityRank: Record<Task['priority'], number> = {
+  Critical: 0,
+  High: 1,
+  Medium: 2,
+  Low: 3,
+};
+
+function isSeedTask(task: Task) {
+  return /^task-\d+$/.test(task.id);
+}
+
+function isSeedFollowUp(followUp: FollowUp) {
+  return /^follow-up-\d+$/.test(followUp.id);
+}
+
 export function DashboardPage() {
-  const tasksDueToday = mockTasks.filter((task) => isToday(task.dueDate) && task.status !== 'Completed');
-  const completedTasks = mockTasks.filter((task) => task.status === 'Completed');
-  const overdueTasks = mockTasks.filter((task) => isPastDue(task.dueDate) && task.status !== 'Completed');
-  const bigThree = mockTasks.slice(0, 3);
+  const { cloudReady, user } = useAuth();
+  const { tasks } = useTasks();
+  const [followUps, setFollowUps] = usePersistentState<FollowUp[]>('ens.followUps.v1', []);
+  const loadedFollowUpsUser = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!cloudReady || !user || loadedFollowUpsUser.current === user.id) {
+      return;
+    }
+
+    loadedFollowUpsUser.current = user.id;
+
+    loadCloudFollowUps()
+      .then((cloudFollowUps) => {
+        if (cloudFollowUps.length > 0) {
+          setFollowUps(cloudFollowUps);
+        }
+      })
+      .catch(() => {
+        loadedFollowUpsUser.current = null;
+      });
+  }, [cloudReady, setFollowUps, user]);
+
+  const liveTasks = useMemo(() => tasks.filter((task) => !isSeedTask(task)), [tasks]);
+  const liveFollowUps = useMemo(() => followUps.filter((followUp) => !isSeedFollowUp(followUp)), [followUps]);
+
+  const tasksDueToday = liveTasks.filter((task) => isToday(task.dueDate) && task.status !== 'Completed');
+  const completedTasks = liveTasks.filter((task) => task.status === 'Completed');
+  const overdueTasks = liveTasks.filter((task) => isPastDue(task.dueDate) && task.status !== 'Completed');
+  const customerCount = new Set(liveFollowUps.map((followUp) => followUp.customerId || followUp.customer)).size;
+
+  const bigThree = useMemo(() => {
+    return liveTasks
+      .filter((task) => task.status !== 'Completed' && task.status !== 'Cancelled')
+      .sort((first, second) => {
+        const todayScore = Number(isToday(second.dueDate)) - Number(isToday(first.dueDate));
+        if (todayScore !== 0) {
+          return todayScore;
+        }
+
+        const overdueScore = Number(isPastDue(second.dueDate)) - Number(isPastDue(first.dueDate));
+        if (overdueScore !== 0) {
+          return overdueScore;
+        }
+
+        const priorityScore = priorityRank[first.priority] - priorityRank[second.priority];
+        if (priorityScore !== 0) {
+          return priorityScore;
+        }
+
+        return first.dueDate.localeCompare(second.dueDate);
+      })
+      .slice(0, 3);
+  }, [liveTasks]);
+
+  const projectProgress = useMemo(() => {
+    const projectNames = new Map(mockProjects.map((project) => [project.id, project.name]));
+    const groupedTasks = liveTasks.reduce<Record<string, Task[]>>((groups, task) => {
+      const key = task.projectId || 'unassigned';
+      return { ...groups, [key]: [...(groups[key] ?? []), task] };
+    }, {});
+
+    return Object.entries(groupedTasks)
+      .map(([projectId, projectTasks]) => {
+        const completed = projectTasks.filter((task) => task.status === 'Completed').length;
+        const total = projectTasks.length;
+        return {
+          id: projectId,
+          name: projectNames.get(projectId) ?? 'Unassigned work',
+          completed,
+          total,
+          progress: total > 0 ? Math.round((completed / total) * 100) : 0,
+        };
+      })
+      .sort((first, second) => second.total - first.total)
+      .slice(0, 4);
+  }, [liveTasks]);
+
+  const activeFollowUps = liveFollowUps
+    .filter((followUp) => followUp.status !== 'Completed')
+    .sort((first, second) => first.dueDate.localeCompare(second.dueDate))
+    .slice(0, 4);
 
   return (
     <div className="space-y-6">
@@ -46,7 +145,7 @@ export function DashboardPage() {
         <StatCard label="Tasks due today" value={tasksDueToday.length} icon={Clock3} caption="Open actions for today" />
         <StatCard label="Completed tasks" value={completedTasks.length} icon={CheckCircle2} caption="Finished and recorded" />
         <StatCard label="Overdue tasks" value={overdueTasks.length} icon={TriangleAlert} caption="Needs executive attention" />
-        <StatCard label="Customers" value={mockCustomers.length} icon={BriefcaseBusiness} caption="CRM relationships tracked" />
+        <StatCard label="Active projects" value={projectProgress.length} icon={BriefcaseBusiness} caption="Built from real tasks" />
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
@@ -60,7 +159,7 @@ export function DashboardPage() {
               <Target className="text-brand-orange" size={22} />
             </div>
             <div className="mt-5 grid gap-3">
-              {bigThree.map((task, index) => (
+              {bigThree.length > 0 ? bigThree.map((task, index) => (
                 <div key={task.id} className="flex gap-4 rounded-md bg-gray-50 p-4">
                   <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-brand-black text-sm font-black text-white">
                     {index + 1}
@@ -70,25 +169,33 @@ export function DashboardPage() {
                     <p className="mt-1 text-sm text-gray-500">{task.description}</p>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <p className="rounded-md bg-gray-50 p-4 text-sm leading-6 text-gray-500">
+                  No live tasks yet. Create your first task and it will appear here.
+                </p>
+              )}
             </div>
           </section>
 
           <section className="rounded-md border border-gray-200 bg-white p-5 shadow-sm">
             <h2 className="text-lg font-black text-brand-black">Project progress</h2>
             <div className="mt-5 space-y-5">
-              {mockProjects.map((project) => (
+              {projectProgress.length > 0 ? projectProgress.map((project) => (
                 <div key={project.id}>
                   <div className="mb-2 flex items-center justify-between gap-4">
                     <div>
                       <p className="font-bold text-brand-black">{project.name}</p>
-                      <p className="text-sm text-gray-500">{project.completedTasks} of {project.totalTasks} tasks complete</p>
+                      <p className="text-sm text-gray-500">{project.completed} of {project.total} tasks complete</p>
                     </div>
                     <span className="text-sm font-black text-brand-black">{project.progress}%</span>
                   </div>
                   <ProgressBar value={project.progress} />
                 </div>
-              ))}
+              )) : (
+                <p className="rounded-md bg-gray-50 p-4 text-sm leading-6 text-gray-500">
+                  No live project activity yet. Assign tasks to projects to build this progress view.
+                </p>
+              )}
             </div>
           </section>
         </div>
@@ -100,22 +207,24 @@ export function DashboardPage() {
               <h2 className="text-lg font-black text-brand-black">Upcoming meetings</h2>
             </div>
             <div className="mt-5 space-y-3">
-              {mockMeetings.map((meeting) => (
-                <div key={meeting.id} className="rounded-md bg-gray-50 p-4">
-                  <p className="font-bold text-brand-black">{meeting.title}</p>
-                  <p className="mt-1 text-sm text-gray-500">{meeting.time} - {meeting.location}</p>
-                </div>
-              ))}
+              <p className="rounded-md bg-gray-50 p-4 text-sm leading-6 text-gray-500">
+                No live meetings connected yet. Calendar sync can be added next.
+              </p>
             </div>
           </section>
 
           <section className="rounded-md border border-gray-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2">
-              <Users size={20} className="text-brand-orange" />
-              <h2 className="text-lg font-black text-brand-black">Customer follow-ups</h2>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Users size={20} className="text-brand-orange" />
+                <h2 className="text-lg font-black text-brand-black">Customer follow-ups</h2>
+              </div>
+              <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-bold text-gray-600">
+                {customerCount} customers
+              </span>
             </div>
             <div className="mt-5 space-y-3">
-              {mockFollowUps.map((followUp) => (
+              {activeFollowUps.length > 0 ? activeFollowUps.map((followUp) => (
                 <div key={followUp.id} className="rounded-md bg-gray-50 p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -128,7 +237,11 @@ export function DashboardPage() {
                     {formatShortDate(followUp.dueDate)} - {followUp.channel}
                   </p>
                 </div>
-              ))}
+              )) : (
+                <p className="rounded-md bg-gray-50 p-4 text-sm leading-6 text-gray-500">
+                  No live CRM follow-ups yet. Create one from Customers and it will appear here.
+                </p>
+              )}
             </div>
           </section>
 
@@ -138,12 +251,9 @@ export function DashboardPage() {
               <h2 className="text-lg font-black text-brand-black">Quick notes</h2>
             </div>
             <div className="mt-5 space-y-3">
-              {mockNotes.map((note) => (
-                <div key={note.id} className="rounded-md bg-gray-50 p-4">
-                  <p className="font-bold text-brand-black">{note.title}</p>
-                  <p className="mt-1 text-sm leading-6 text-gray-500">{note.body}</p>
-                </div>
-              ))}
+              <p className="rounded-md bg-gray-50 p-4 text-sm leading-6 text-gray-500">
+                No live notes connected yet. Notes can be made editable in the next build.
+              </p>
             </div>
           </section>
         </div>
