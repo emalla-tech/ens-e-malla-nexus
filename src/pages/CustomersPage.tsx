@@ -13,16 +13,13 @@ import {
   TriangleAlert,
   Users,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Button } from '../components/Button';
 import { Badge } from '../components/PriorityBadge';
 import { StatCard } from '../components/StatCard';
-import { useAuth } from '../hooks/useAuth';
 import { useCustomers } from '../hooks/useCustomers';
-import { usePersistentState } from '../hooks/usePersistentState';
-import { loadCloudFollowUps, saveCloudFollowUp } from '../services/syncService';
+import { useFollowUps } from '../hooks/useFollowUps';
 import type { Customer, CustomerHealth, CustomerStatus, FollowUp, Priority } from '../types';
-import { getLiveFollowUps } from '../utils/crm';
 import { formatShortDate, isPastDue, isToday } from '../utils/date';
 
 type CustomerStatusFilter = CustomerStatus | 'All';
@@ -74,37 +71,18 @@ const healthStyles: Record<CustomerHealth, string> = {
 };
 
 export function CustomersPage() {
-  const { cloudReady, user } = useAuth();
   const { customers, createCustomer, syncError, syncing, syncFromCloud } = useCustomers();
-  const [followUps, setFollowUps] = usePersistentState<FollowUp[]>('ens.followUps.v1', []);
+  const {
+    followUps: liveFollowUps,
+    createFollowUp,
+    completeFollowUp,
+    syncError: followUpSyncError,
+  } = useFollowUps();
   const [query, setQuery] = useState('');
   const [customerStatus, setCustomerStatus] = useState<CustomerStatusFilter>('All');
   const [followUpStatus, setFollowUpStatus] = useState<FollowUpStatusFilter>('All');
   const [customerDraft, setCustomerDraft] = useState<CustomerDraft>(emptyCustomerDraft);
   const [followUpDraft, setFollowUpDraft] = useState<FollowUpDraft>(emptyFollowUpDraft);
-  const [followUpSyncError, setFollowUpSyncError] = useState('');
-  const loadedFollowUpsUser = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (!cloudReady || !user || loadedFollowUpsUser.current === user.id) {
-      return;
-    }
-
-    loadedFollowUpsUser.current = user.id;
-
-    loadCloudFollowUps()
-      .then((cloudFollowUps) => {
-        if (cloudFollowUps.length > 0) {
-          setFollowUps(cloudFollowUps);
-          return;
-        }
-
-        void Promise.all(getLiveFollowUps(followUps).map((followUp) => saveCloudFollowUp(followUp).catch(() => undefined)));
-      })
-      .catch(() => {
-        loadedFollowUpsUser.current = null;
-      });
-  }, [cloudReady, followUps, setFollowUps, user]);
 
   useEffect(() => {
     if (followUpDraft.customerId || customers.length === 0) {
@@ -113,8 +91,6 @@ export function CustomersPage() {
 
     setFollowUpDraft((current) => ({ ...current, customerId: customers[0].id }));
   }, [customers, followUpDraft.customerId]);
-
-  const liveFollowUps = useMemo(() => getLiveFollowUps(followUps), [followUps]);
 
   const filteredCustomers = useMemo(() => {
     return customers.filter((customer) => {
@@ -178,39 +154,14 @@ export function CustomersPage() {
       return;
     }
 
-    const followUp: FollowUp = {
+    createFollowUp({
       ...followUpDraft,
-      id: crypto.randomUUID(),
       customer: customer.company,
       note: followUpDraft.note.trim(),
       nextStep: followUpDraft.nextStep.trim(),
       owner: followUpDraft.owner.trim() || customer.owner || 'John',
-    };
-
-    setFollowUps((current) => [followUp, ...getLiveFollowUps(current)]);
-    if (cloudReady && user) {
-      setFollowUpSyncError('');
-      void saveCloudFollowUp(followUp).catch((error) => {
-        setFollowUpSyncError(error instanceof Error ? error.message : 'Follow-up was saved locally but cloud sync failed.');
-      });
-    }
+    });
     setFollowUpDraft({ ...emptyFollowUpDraft, customerId: customers[0]?.id ?? '' });
-  }
-
-  function completeFollowUp(followUpId: string) {
-    const nextFollowUp = liveFollowUps.find((followUp) => followUp.id === followUpId);
-    setFollowUps((current) =>
-      getLiveFollowUps(current).map((followUp) =>
-        followUp.id === followUpId ? { ...followUp, status: 'Completed' } : followUp,
-      ),
-    );
-
-    if (nextFollowUp && cloudReady && user) {
-      setFollowUpSyncError('');
-      void saveCloudFollowUp({ ...nextFollowUp, status: 'Completed' }).catch((error) => {
-        setFollowUpSyncError(error instanceof Error ? error.message : 'Follow-up was completed locally but cloud sync failed.');
-      });
-    }
   }
 
   return (
