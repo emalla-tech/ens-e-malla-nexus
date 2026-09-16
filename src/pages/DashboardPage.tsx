@@ -14,13 +14,14 @@ import { Link } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { ProgressBar } from '../components/ProgressBar';
 import { StatCard } from '../components/StatCard';
-import { mockProjects } from '../data/mockData';
 import { useAuth } from '../hooks/useAuth';
 import { usePersistentState } from '../hooks/usePersistentState';
+import { useProjects } from '../hooks/useProjects';
 import { useTasks } from '../hooks/useTasks';
 import { loadCloudFollowUps } from '../services/syncService';
 import type { FollowUp, Task } from '../types';
 import { formatLongDate, formatShortDate, isPastDue, isToday } from '../utils/date';
+import { getLiveTasks, isSeedFollowUpId, withProjectTaskStats } from '../utils/projects';
 
 const priorityRank: Record<Task['priority'], number> = {
   Critical: 0,
@@ -28,14 +29,6 @@ const priorityRank: Record<Task['priority'], number> = {
   Medium: 2,
   Low: 3,
 };
-
-function isSeedTask(task: Task) {
-  return /^task-\d+$/.test(task.id);
-}
-
-function isSeedFollowUp(followUp: FollowUp) {
-  return /^follow-up-\d+$/.test(followUp.id);
-}
 
 function getTimeGreeting(date = new Date()) {
   const hour = date.getHours();
@@ -54,6 +47,7 @@ function getTimeGreeting(date = new Date()) {
 export function DashboardPage() {
   const { cloudReady, user } = useAuth();
   const { tasks } = useTasks();
+  const { projects } = useProjects();
   const [followUps, setFollowUps] = usePersistentState<FollowUp[]>('ens.followUps.v1', []);
   const loadedFollowUpsUser = useRef<string | null>(null);
 
@@ -75,8 +69,8 @@ export function DashboardPage() {
       });
   }, [cloudReady, setFollowUps, user]);
 
-  const liveTasks = useMemo(() => tasks.filter((task) => !isSeedTask(task)), [tasks]);
-  const liveFollowUps = useMemo(() => followUps.filter((followUp) => !isSeedFollowUp(followUp)), [followUps]);
+  const liveTasks = useMemo(() => getLiveTasks(tasks), [tasks]);
+  const liveFollowUps = useMemo(() => followUps.filter((followUp) => !isSeedFollowUpId(followUp.id)), [followUps]);
 
   const tasksDueToday = liveTasks.filter((task) => isToday(task.dueDate) && task.status !== 'Completed');
   const completedTasks = liveTasks.filter((task) => task.status === 'Completed');
@@ -108,27 +102,11 @@ export function DashboardPage() {
   }, [liveTasks]);
 
   const projectProgress = useMemo(() => {
-    const projectNames = new Map(mockProjects.map((project) => [project.id, project.name]));
-    const groupedTasks = liveTasks.reduce<Record<string, Task[]>>((groups, task) => {
-      const key = task.projectId || 'unassigned';
-      return { ...groups, [key]: [...(groups[key] ?? []), task] };
-    }, {});
-
-    return Object.entries(groupedTasks)
-      .map(([projectId, projectTasks]) => {
-        const completed = projectTasks.filter((task) => task.status === 'Completed').length;
-        const total = projectTasks.length;
-        return {
-          id: projectId,
-          name: projectNames.get(projectId) ?? 'Unassigned work',
-          completed,
-          total,
-          progress: total > 0 ? Math.round((completed / total) * 100) : 0,
-        };
-      })
-      .sort((first, second) => second.total - first.total)
+    return withProjectTaskStats(projects, liveTasks)
+      .filter((project) => project.totalTasks > 0)
+      .sort((first, second) => second.totalTasks - first.totalTasks)
       .slice(0, 4);
-  }, [liveTasks]);
+  }, [liveTasks, projects]);
 
   const activeFollowUps = liveFollowUps
     .filter((followUp) => followUp.status !== 'Completed')
@@ -200,7 +178,7 @@ export function DashboardPage() {
                   <div className="mb-2 flex items-center justify-between gap-4">
                     <div>
                       <p className="font-bold text-brand-black">{project.name}</p>
-                      <p className="text-sm text-gray-500">{project.completed} of {project.total} tasks complete</p>
+                      <p className="text-sm text-gray-500">{project.completedTasks} of {project.totalTasks} tasks complete</p>
                     </div>
                     <span className="text-sm font-black text-brand-black">{project.progress}%</span>
                   </div>

@@ -2,8 +2,9 @@ import { Cloud, Filter, RefreshCw, Search, TriangleAlert } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { TaskForm } from '../components/TaskForm';
 import { TaskList } from '../components/TaskList';
-import { mockProjects } from '../data/mockData';
+import { useProjects } from '../hooks/useProjects';
 import { useTasks } from '../hooks/useTasks';
+import { withProjectTaskStats } from '../utils/projects';
 import type { Priority, Task, TaskStatus } from '../types';
 
 type PriorityFilter = Priority | 'All';
@@ -21,6 +22,7 @@ export function TasksPage() {
     syncing,
     syncFromCloud,
   } = useTasks();
+  const { projects } = useProjects();
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [query, setQuery] = useState('');
   const [priority, setPriority] = useState<PriorityFilter>('All');
@@ -39,6 +41,8 @@ export function TasksPage() {
       return matchesQuery && matchesPriority && matchesStatus && matchesProject;
     });
   }, [tasks, query, priority, status, projectId]);
+
+  const projectsWithStats = useMemo(() => withProjectTaskStats(projects, tasks), [projects, tasks]);
 
   return (
     <div className="space-y-6">
@@ -97,7 +101,7 @@ export function TasksPage() {
       </section>
 
       <TaskForm
-        projects={mockProjects}
+        projects={projectsWithStats}
         editingTask={editingTask}
         onSubmit={(draft) => {
           if (editingTask) {
@@ -158,7 +162,8 @@ export function TasksPage() {
             aria-label="Filter by project"
           >
             <option value="All">All projects</option>
-            {mockProjects.map((project) => (
+            <option value="">No project</option>
+            {projectsWithStats.map((project) => (
               <option key={project.id} value={project.id}>
                 {project.name}
               </option>
@@ -169,7 +174,7 @@ export function TasksPage() {
 
       <TaskList
         tasks={filteredTasks}
-        projects={mockProjects}
+        projects={projectsWithStats}
         onEdit={setEditingTask}
         onDelete={deleteTask}
         onComplete={completeTask}

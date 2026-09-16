@@ -1,4 +1,4 @@
-import type { FollowUp, Task } from '../types';
+import type { FollowUp, Project, Task } from '../types';
 import { getCurrentUserId } from './authService';
 import { supabase } from './supabase';
 
@@ -74,6 +74,67 @@ export async function deleteCloudTask(taskId: string) {
   const userId = await requireUserId();
 
   const { error } = await client.from('tasks').delete().eq('id', taskId).eq('user_id', userId);
+  if (error) {
+    throw error;
+  }
+}
+
+export async function loadCloudProjects(): Promise<Project[]> {
+  const client = requireSupabase();
+  const userId = await requireUserId();
+
+  const { data, error } = await client
+    .from('projects')
+    .select('*')
+    .eq('user_id', userId)
+    .order('due_date', { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map((project) => ({
+    id: project.id,
+    name: project.name,
+    description: project.description,
+    status: project.status,
+    progress: project.progress,
+    totalTasks: project.total_tasks,
+    completedTasks: project.completed_tasks,
+    dueDate: project.due_date,
+    owner: project.owner,
+    client: project.client,
+  }));
+}
+
+export async function saveCloudProject(project: Project) {
+  const client = requireSupabase();
+  const userId = await requireUserId();
+
+  const { error } = await client.from('projects').upsert({
+    id: project.id,
+    user_id: userId,
+    name: project.name,
+    description: project.description,
+    status: project.status,
+    progress: project.progress,
+    total_tasks: project.totalTasks,
+    completed_tasks: project.completedTasks,
+    due_date: project.dueDate,
+    owner: project.owner,
+    client: project.client,
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function deleteCloudProject(projectId: string) {
+  const client = requireSupabase();
+  const userId = await requireUserId();
+
+  const { error } = await client.from('projects').delete().eq('id', projectId).eq('user_id', userId);
   if (error) {
     throw error;
   }

@@ -2,12 +2,17 @@ import { ArrowLeft, CalendarDays, CheckCircle2, UserRound } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { Badge } from '../components/PriorityBadge';
 import { ProgressBar } from '../components/ProgressBar';
-import { mockProjects, mockTasks } from '../data/mockData';
+import { useProjects } from '../hooks/useProjects';
+import { useTasks } from '../hooks/useTasks';
 import { formatShortDate } from '../utils/date';
+import { getLiveTasks, withProjectTaskStats } from '../utils/projects';
 
 export function ProjectDetailPage() {
   const { projectId } = useParams();
-  const project = mockProjects.find((item) => item.id === projectId);
+  const { projects } = useProjects();
+  const { tasks } = useTasks();
+  const projectsWithStats = withProjectTaskStats(projects, tasks);
+  const project = projectsWithStats.find((item) => item.id === projectId);
 
   if (!project) {
     return (
@@ -20,7 +25,7 @@ export function ProjectDetailPage() {
     );
   }
 
-  const projectTasks = mockTasks.filter((task) => task.projectId === project.id);
+  const projectTasks = getLiveTasks(tasks).filter((task) => task.projectId === project.id);
 
   return (
     <div className="space-y-6">
@@ -81,6 +86,11 @@ export function ProjectDetailPage() {
               </div>
             </div>
           ))}
+          {projectTasks.length === 0 ? (
+            <p className="rounded-md bg-gray-50 p-4 text-sm leading-6 text-gray-500">
+              No live tasks are assigned to this project yet.
+            </p>
+          ) : null}
         </div>
       </section>
     </div>

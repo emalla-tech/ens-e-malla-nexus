@@ -14,7 +14,7 @@ const emptyDraft: TaskDraft = {
   priority: 'Medium',
   status: 'Pending',
   dueDate: new Date().toISOString().slice(0, 10),
-  projectId: 'project-growth',
+  projectId: '',
   assignee: 'John',
   schedule: 'Morning',
 };
@@ -111,6 +111,7 @@ export function TaskForm({ projects, editingTask, onSubmit, onCancelEdit }: Task
             onChange={(event) => setDraft({ ...draft, projectId: event.target.value })}
             className="min-h-11 w-full rounded-md border border-gray-200 bg-white px-3 outline-none transition focus:border-brand-orange focus:ring-2 focus:ring-orange-100"
           >
+            <option value="">No project</option>
             {projects.map((project) => (
               <option key={project.id} value={project.id}>
                 {project.name}
