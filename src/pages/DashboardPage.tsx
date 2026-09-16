@@ -37,6 +37,20 @@ function isSeedFollowUp(followUp: FollowUp) {
   return /^follow-up-\d+$/.test(followUp.id);
 }
 
+function getTimeGreeting(date = new Date()) {
+  const hour = date.getHours();
+
+  if (hour >= 5 && hour < 12) {
+    return 'Good morning';
+  }
+
+  if (hour >= 12 && hour < 17) {
+    return 'Good afternoon';
+  }
+
+  return 'Good evening';
+}
+
 export function DashboardPage() {
   const { cloudReady, user } = useAuth();
   const { tasks } = useTasks();
@@ -120,6 +134,7 @@ export function DashboardPage() {
     .filter((followUp) => followUp.status !== 'Completed')
     .sort((first, second) => first.dueDate.localeCompare(second.dueDate))
     .slice(0, 4);
+  const greeting = getTimeGreeting();
 
   return (
     <div className="space-y-6">
@@ -127,7 +142,7 @@ export function DashboardPage() {
         <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.18em] text-brand-orange">{formatLongDate()}</p>
-            <h1 className="mt-3 text-3xl font-black tracking-normal sm:text-4xl">Good morning, John</h1>
+            <h1 className="mt-3 text-3xl font-black tracking-normal sm:text-4xl">{greeting}, John</h1>
             <p className="mt-3 max-w-2xl text-base leading-7 text-gray-300">
               Your operating rhythm is ready: priorities, decisions, projects, and customer follow-ups in one view.
             </p>
