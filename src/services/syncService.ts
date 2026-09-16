@@ -1,4 +1,4 @@
-import type { Customer, FollowUp, Meeting, Project, QuickNote, Task } from '../types';
+import type { Customer, FollowUp, Goal, Meeting, Project, QuickNote, Task } from '../types';
 import { getCurrentUserId } from './authService';
 import { supabase } from './supabase';
 
@@ -354,6 +354,57 @@ export async function deleteCloudMeeting(meetingId: string) {
   const userId = await requireUserId();
 
   const { error } = await client.from('meetings').delete().eq('id', meetingId).eq('user_id', userId);
+  if (error) {
+    throw error;
+  }
+}
+
+export async function loadCloudGoals(): Promise<Goal[]> {
+  const client = requireSupabase();
+  const userId = await requireUserId();
+
+  const { data, error } = await client
+    .from('goals')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map((goal) => ({
+    id: goal.id,
+    title: goal.title,
+    progress: goal.progress,
+    owner: goal.owner,
+    horizon: goal.horizon,
+  }));
+}
+
+export async function saveCloudGoal(goal: Goal) {
+  const client = requireSupabase();
+  const userId = await requireUserId();
+
+  const { error } = await client.from('goals').upsert({
+    id: goal.id,
+    user_id: userId,
+    title: goal.title,
+    progress: goal.progress,
+    owner: goal.owner,
+    horizon: goal.horizon,
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function deleteCloudGoal(goalId: string) {
+  const client = requireSupabase();
+  const userId = await requireUserId();
+
+  const { error } = await client.from('goals').delete().eq('id', goalId).eq('user_id', userId);
   if (error) {
     throw error;
   }

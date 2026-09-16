@@ -94,6 +94,17 @@ create table if not exists public.meetings (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.goals (
+  id text primary key default gen_random_uuid()::text,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  progress integer not null default 0 check (progress between 0 and 100),
+  owner text not null default 'John',
+  horizon text not null default 'Monthly' check (horizon in ('Weekly', 'Monthly', 'Quarterly')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 alter table public.profiles enable row level security;
 alter table public.projects enable row level security;
 alter table public.tasks enable row level security;
@@ -101,6 +112,7 @@ alter table public.customers enable row level security;
 alter table public.follow_ups enable row level security;
 alter table public.notes enable row level security;
 alter table public.meetings enable row level security;
+alter table public.goals enable row level security;
 
 create policy "profiles are user-owned" on public.profiles
   for all using (auth.uid() = id) with check (auth.uid() = id);
@@ -121,6 +133,9 @@ create policy "notes are user-owned" on public.notes
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 create policy "meetings are user-owned" on public.meetings
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "goals are user-owned" on public.goals
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 create or replace function public.handle_new_user()
