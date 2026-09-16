@@ -1,10 +1,19 @@
 import { BellRing, Building2, CheckCircle2, Smartphone, UserRound } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AuthPanel } from '../components/AuthPanel';
 import { Button } from '../components/Button';
 import { Logo } from '../components/Logo';
 import { useNotificationPreferences } from '../hooks/useNotificationPreferences';
-import { getNotificationPermission, requestNotificationPermission, showTestNotification } from '../services/notificationService';
+import {
+  connectServerPush,
+  disconnectServerPush,
+  getNotificationPermission,
+  getServerPushSubscription,
+  isServerPushConfigured,
+  requestNotificationPermission,
+  showTestNotification,
+  updateServerPushPreferences,
+} from '../services/notificationService';
 import { isSupabaseConfigured } from '../services/supabase';
 
 function Toggle({ checked, label, onChange }: { checked: boolean; label: string; onChange: (checked: boolean) => void }) {
@@ -20,6 +29,22 @@ export function SettingsPage() {
   const [preferences, setPreferences] = useNotificationPreferences();
   const [permission, setPermission] = useState(getNotificationPermission());
   const [notificationMessage, setNotificationMessage] = useState('');
+  const [serverPushConnected, setServerPushConnected] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+
+  useEffect(() => {
+    void getServerPushSubscription().then((subscription) => setServerPushConnected(Boolean(subscription)));
+  }, []);
+
+  useEffect(() => {
+    if (!serverPushConnected) return;
+    const timeout = window.setTimeout(() => {
+      void updateServerPushPreferences(preferences).catch(() => {
+        setNotificationMessage('Preferences were saved on this phone, but server sync failed.');
+      });
+    }, 500);
+    return () => window.clearTimeout(timeout);
+  }, [preferences, serverPushConnected]);
 
   function updatePreference<Key extends keyof typeof preferences>(key: Key, value: (typeof preferences)[Key]) {
     setPreferences((current) => ({ ...current, [key]: value }));
@@ -40,6 +65,36 @@ export function SettingsPage() {
       setNotificationMessage('Test notification sent successfully.');
     } catch (error) {
       setNotificationMessage(error instanceof Error ? error.message : 'Could not send the test notification.');
+    }
+  }
+
+  async function connectPush() {
+    setPushBusy(true);
+    setNotificationMessage('');
+    try {
+      await connectServerPush({ ...preferences, enabled: true });
+      updatePreference('enabled', true);
+      setServerPushConnected(true);
+      setNotificationMessage('This phone is connected to ENs server reminders.');
+    } catch (error) {
+      setNotificationMessage(error instanceof Error ? error.message : 'Could not connect this phone to server push.');
+    } finally {
+      setPushBusy(false);
+    }
+  }
+
+  async function disconnectPush() {
+    setPushBusy(true);
+    setNotificationMessage('');
+    try {
+      await disconnectServerPush();
+      updatePreference('enabled', false);
+      setServerPushConnected(false);
+      setNotificationMessage('Server reminders are paused on this phone.');
+    } catch (error) {
+      setNotificationMessage(error instanceof Error ? error.message : 'Could not pause server reminders.');
+    } finally {
+      setPushBusy(false);
     }
   }
 
@@ -124,9 +179,13 @@ export function SettingsPage() {
           {notificationMessage ? <p className="mt-5 rounded-md bg-gray-50 p-3 text-sm text-gray-600">{notificationMessage}</p> : null}
           <div className="mt-5 flex flex-col gap-3 sm:flex-row">
             {permission !== 'granted' ? <Button type="button" onClick={enableNotifications} disabled={permission === 'unsupported'}><BellRing size={17} />Enable phone notifications</Button> : <Button type="button" onClick={sendTestNotification}><BellRing size={17} />Send test notification</Button>}
-            {permission === 'granted' ? <Button type="button" variant="secondary" onClick={() => updatePreference('enabled', !preferences.enabled)}>{preferences.enabled ? 'Pause notifications' : 'Resume notifications'}</Button> : null}
+            {permission === 'granted' && isServerPushConfigured() ? (
+              serverPushConnected
+                ? <Button type="button" variant="secondary" disabled={pushBusy} onClick={disconnectPush}>Pause server reminders</Button>
+                : <Button type="button" variant="secondary" disabled={pushBusy} onClick={connectPush}>{pushBusy ? 'Connecting...' : 'Connect server push'}</Button>
+            ) : null}
           </div>
-          <p className="mt-4 text-xs leading-5 text-gray-400">Sound follows your phone notification volume and silent mode. Reliable delivery while ENs is fully closed will be added with server push in the next phase.</p>
+          <p className="mt-4 text-xs leading-5 text-gray-400">Sound follows your phone notification volume and silent mode. Server reminders can arrive while ENs is closed after this phone is connected.</p>
         </article>
       </section>
     </div>

@@ -76,11 +76,23 @@ ENs is prepared for Supabase authentication and cloud sync.
 ```bash
 VITE_SUPABASE_URL=your-project-url
 VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_WEB_PUSH_PUBLIC_KEY=your-vapid-public-key
 ```
 
 5. Restart the development server.
 
 Until those keys are configured, ENs continues using local browser storage.
+
+### Server push notifications
+
+1. Run `npm run generate:vapid` once and keep both generated keys private.
+2. Add `VITE_WEB_PUSH_PUBLIC_KEY` to Netlify using the generated public key.
+3. Run `supabase/add-push-notifications.sql` in the Supabase SQL Editor.
+4. Add `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, and a strong `CRON_SECRET` to Supabase Edge Function secrets.
+5. Deploy `supabase/functions/send-reminders` with JWT verification disabled.
+6. Schedule a POST request every 5 minutes to the function with the `x-cron-secret` header.
+
+The reminder function respects each device's selected alert categories and quiet hours, records deliveries to avoid duplicates, and removes expired browser subscriptions.
 
 If tasks or CRM follow-ups save locally but do not appear on another device, run
 `supabase/fix-task-sync.sql` in the Supabase SQL editor. It relaxes early MVP
