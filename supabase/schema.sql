@@ -73,11 +73,21 @@ create table if not exists public.follow_ups (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.notes (
+  id text primary key default gen_random_uuid()::text,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  body text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 alter table public.profiles enable row level security;
 alter table public.projects enable row level security;
 alter table public.tasks enable row level security;
 alter table public.customers enable row level security;
 alter table public.follow_ups enable row level security;
+alter table public.notes enable row level security;
 
 create policy "profiles are user-owned" on public.profiles
   for all using (auth.uid() = id) with check (auth.uid() = id);
@@ -92,6 +102,9 @@ create policy "customers are user-owned" on public.customers
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 create policy "follow ups are user-owned" on public.follow_ups
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "notes are user-owned" on public.notes
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 create or replace function public.handle_new_user()

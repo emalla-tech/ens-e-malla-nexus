@@ -1,4 +1,4 @@
-import type { Customer, FollowUp, Project, Task } from '../types';
+import type { Customer, FollowUp, Project, QuickNote, Task } from '../types';
 import { getCurrentUserId } from './authService';
 import { supabase } from './supabase';
 
@@ -251,6 +251,55 @@ export async function saveCloudFollowUp(followUp: FollowUp) {
     next_step: followUp.nextStep,
   });
 
+  if (error) {
+    throw error;
+  }
+}
+
+export async function loadCloudNotes(): Promise<QuickNote[]> {
+  const client = requireSupabase();
+  const userId = await requireUserId();
+
+  const { data, error } = await client
+    .from('notes')
+    .select('*')
+    .eq('user_id', userId)
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map((note) => ({
+    id: note.id,
+    title: note.title,
+    body: note.body,
+    updatedAt: note.updated_at.slice(0, 10),
+  }));
+}
+
+export async function saveCloudNote(note: QuickNote) {
+  const client = requireSupabase();
+  const userId = await requireUserId();
+
+  const { error } = await client.from('notes').upsert({
+    id: note.id,
+    user_id: userId,
+    title: note.title,
+    body: note.body,
+    updated_at: note.updatedAt,
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function deleteCloudNote(noteId: string) {
+  const client = requireSupabase();
+  const userId = await requireUserId();
+
+  const { error } = await client.from('notes').delete().eq('id', noteId).eq('user_id', userId);
   if (error) {
     throw error;
   }
