@@ -1,4 +1,4 @@
-import type { Customer, FollowUp, Project, QuickNote, Task } from '../types';
+import type { Customer, FollowUp, Meeting, Project, QuickNote, Task } from '../types';
 import { getCurrentUserId } from './authService';
 import { supabase } from './supabase';
 
@@ -300,6 +300,60 @@ export async function deleteCloudNote(noteId: string) {
   const userId = await requireUserId();
 
   const { error } = await client.from('notes').delete().eq('id', noteId).eq('user_id', userId);
+  if (error) {
+    throw error;
+  }
+}
+
+export async function loadCloudMeetings(): Promise<Meeting[]> {
+  const client = requireSupabase();
+  const userId = await requireUserId();
+
+  const { data, error } = await client
+    .from('meetings')
+    .select('*')
+    .eq('user_id', userId)
+    .order('date', { ascending: true })
+    .order('time', { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map((meeting) => ({
+    id: meeting.id,
+    title: meeting.title,
+    date: meeting.date,
+    time: meeting.time,
+    attendees: meeting.attendees,
+    location: meeting.location,
+  }));
+}
+
+export async function saveCloudMeeting(meeting: Meeting) {
+  const client = requireSupabase();
+  const userId = await requireUserId();
+
+  const { error } = await client.from('meetings').upsert({
+    id: meeting.id,
+    user_id: userId,
+    title: meeting.title,
+    date: meeting.date,
+    time: meeting.time,
+    attendees: meeting.attendees,
+    location: meeting.location,
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function deleteCloudMeeting(meetingId: string) {
+  const client = requireSupabase();
+  const userId = await requireUserId();
+
+  const { error } = await client.from('meetings').delete().eq('id', meetingId).eq('user_id', userId);
   if (error) {
     throw error;
   }

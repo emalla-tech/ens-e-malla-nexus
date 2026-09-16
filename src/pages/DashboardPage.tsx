@@ -16,6 +16,7 @@ import { ProgressBar } from '../components/ProgressBar';
 import { StatCard } from '../components/StatCard';
 import { useAuth } from '../hooks/useAuth';
 import { useCustomers } from '../hooks/useCustomers';
+import { useMeetings } from '../hooks/useMeetings';
 import { useNotes } from '../hooks/useNotes';
 import { usePersistentState } from '../hooks/usePersistentState';
 import { useProjects } from '../hooks/useProjects';
@@ -53,6 +54,7 @@ export function DashboardPage() {
   const { projects } = useProjects();
   const { customers } = useCustomers();
   const { notes } = useNotes();
+  const { meetings } = useMeetings();
   const [followUps, setFollowUps] = usePersistentState<FollowUp[]>('ens.followUps.v1', []);
   const loadedFollowUpsUser = useRef<string | null>(null);
 
@@ -117,6 +119,10 @@ export function DashboardPage() {
     .sort((first, second) => first.dueDate.localeCompare(second.dueDate))
     .slice(0, 4);
   const latestNotes = notes.slice(0, 3);
+  const upcomingMeetings = meetings
+    .filter((meeting) => meeting.date >= new Date().toISOString().slice(0, 10))
+    .sort((first, second) => `${first.date} ${first.time}`.localeCompare(`${second.date} ${second.time}`))
+    .slice(0, 3);
   const greeting = getTimeGreeting();
 
   return (
@@ -205,9 +211,16 @@ export function DashboardPage() {
               <h2 className="text-lg font-black text-brand-black">Upcoming meetings</h2>
             </div>
             <div className="mt-5 space-y-3">
-              <p className="rounded-md bg-gray-50 p-4 text-sm leading-6 text-gray-500">
-                No live meetings connected yet. Calendar sync can be added next.
-              </p>
+              {upcomingMeetings.length > 0 ? upcomingMeetings.map((meeting) => (
+                <div key={meeting.id} className="rounded-md bg-gray-50 p-4">
+                  <p className="font-bold text-brand-black">{meeting.title}</p>
+                  <p className="mt-1 text-sm text-gray-500">{formatShortDate(meeting.date)} - {meeting.time} - {meeting.location}</p>
+                </div>
+              )) : (
+                <p className="rounded-md bg-gray-50 p-4 text-sm leading-6 text-gray-500">
+                  No live meetings scheduled yet. Create one from Calendar and it will appear here.
+                </p>
+              )}
             </div>
           </section>
 

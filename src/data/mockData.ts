@@ -115,6 +115,7 @@ export const mockMeetings: Meeting[] = [
   {
     id: 'meeting-1',
     title: 'Leadership daily sync',
+    date: isoToday,
     time: '09:00',
     attendees: ['John', 'Maya', 'Daniel'],
     location: 'Boardroom',
@@ -122,6 +123,7 @@ export const mockMeetings: Meeting[] = [
   {
     id: 'meeting-2',
     title: 'Northstar rollout check-in',
+    date: isoToday,
     time: '14:30',
     attendees: ['Aline', 'Customer Success'],
     location: 'Google Meet',

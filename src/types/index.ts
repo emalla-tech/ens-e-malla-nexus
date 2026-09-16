@@ -52,6 +52,7 @@ export interface Customer {
 export interface Meeting {
   id: string;
   title: string;
+  date: string;
   time: string;
   attendees: string[];
   location: string;

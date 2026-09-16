@@ -137,6 +137,25 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['notes']['Row']>;
         Relationships: [];
       };
+      meetings: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          date: string;
+          time: string;
+          attendees: string[];
+          location: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['meetings']['Row']> & {
+          user_id: string;
+          title: string;
+        };
+        Update: Partial<Database['public']['Tables']['meetings']['Row']>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
