@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { deleteCloudCustomer, loadCloudCustomers, saveCloudCustomer } from '../services/syncService';
 import type { Customer } from '../types';
+import { sortCustomers } from '../utils/sortRecords';
 import { useAuth } from './useAuth';
 import { usePersistentState } from './usePersistentState';
 
@@ -39,7 +40,7 @@ export function useCustomers() {
     loadCloudCustomers()
       .then((cloudCustomers) => {
         if (cloudCustomers.length > 0) {
-          setCustomers(cloudCustomers);
+          setCustomers(sortCustomers(cloudCustomers));
           return;
         }
 
@@ -69,7 +70,7 @@ export function useCustomers() {
       id: crypto.randomUUID(),
     };
 
-    setCustomers((current) => [customer, ...current]);
+    setCustomers((current) => sortCustomers([customer, ...current]));
     if (cloudReady && user) {
       setSyncError('');
       void saveCloudCustomer(customer).catch((error) => {
@@ -80,9 +81,9 @@ export function useCustomers() {
 
   function updateCustomer(customerId: string, updates: DraftCustomer) {
     const nextCustomer = customers.find((customer) => customer.id === customerId);
-    setCustomers((current) =>
+    setCustomers((current) => sortCustomers(
       current.map((customer) => (customer.id === customerId ? { ...customer, ...updates } : customer)),
-    );
+    ));
 
     if (nextCustomer && cloudReady && user) {
       setSyncError('');

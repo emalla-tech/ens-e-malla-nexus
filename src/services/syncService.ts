@@ -27,7 +27,8 @@ export async function loadCloudTasks(): Promise<Task[]> {
     .from('tasks')
     .select('*')
     .eq('user_id', userId)
-    .order('due_date', { ascending: true });
+    .order('due_date', { ascending: true })
+    .order('created_at', { ascending: false });
 
   if (error) {
     throw error;
@@ -43,7 +44,7 @@ export async function loadCloudTasks(): Promise<Task[]> {
     projectId: task.project_id ?? '',
     assignee: task.assignee,
     schedule: task.schedule,
-    createdAt: task.created_at.slice(0, 10),
+    createdAt: task.created_at,
   }));
 }
 
@@ -87,7 +88,8 @@ export async function loadCloudProjects(): Promise<Project[]> {
     .from('projects')
     .select('*')
     .eq('user_id', userId)
-    .order('due_date', { ascending: true });
+    .order('due_date', { ascending: true })
+    .order('created_at', { ascending: false });
 
   if (error) {
     throw error;
@@ -148,7 +150,8 @@ export async function loadCloudCustomers(): Promise<Customer[]> {
     .from('customers')
     .select('*')
     .eq('user_id', userId)
-    .order('next_follow_up', { ascending: true });
+    .order('next_follow_up', { ascending: true })
+    .order('created_at', { ascending: false });
 
   if (error) {
     throw error;
@@ -213,7 +216,8 @@ export async function loadCloudFollowUps(): Promise<FollowUp[]> {
     .from('follow_ups')
     .select('*')
     .eq('user_id', userId)
-    .order('due_date', { ascending: true });
+    .order('due_date', { ascending: true })
+    .order('created_at', { ascending: false });
 
   if (error) {
     throw error;
@@ -314,7 +318,8 @@ export async function loadCloudMeetings(): Promise<Meeting[]> {
     .select('*')
     .eq('user_id', userId)
     .order('date', { ascending: true })
-    .order('time', { ascending: true });
+    .order('time', { ascending: true })
+    .order('created_at', { ascending: false });
 
   if (error) {
     throw error;

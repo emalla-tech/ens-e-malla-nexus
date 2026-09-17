@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { loadCloudFollowUps, saveCloudFollowUp } from '../services/syncService';
 import type { FollowUp } from '../types';
 import { getLiveFollowUps } from '../utils/crm';
+import { sortFollowUps } from '../utils/sortRecords';
 import { useAuth } from './useAuth';
 import { usePersistentState } from './usePersistentState';
 
@@ -27,7 +28,7 @@ export function useFollowUps() {
     loadCloudFollowUps()
       .then((cloudFollowUps) => {
         if (cloudFollowUps.length > 0) {
-          setFollowUps(cloudFollowUps);
+          setFollowUps(sortFollowUps(cloudFollowUps));
           return;
         }
         void Promise.all(seedFollowUps.map((followUp) => saveCloudFollowUp(followUp)));
@@ -47,7 +48,7 @@ export function useFollowUps() {
 
   function createFollowUp(draft: DraftFollowUp) {
     const followUp: FollowUp = { ...draft, id: crypto.randomUUID() };
-    setFollowUps((current) => [followUp, ...getLiveFollowUps(current)]);
+    setFollowUps((current) => sortFollowUps([followUp, ...getLiveFollowUps(current)]));
     if (cloudReady && user) {
       setSyncError('');
       void saveCloudFollowUp(followUp).catch((error) => {

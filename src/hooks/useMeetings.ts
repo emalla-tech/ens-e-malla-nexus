@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { deleteCloudMeeting, loadCloudMeetings, saveCloudMeeting } from '../services/syncService';
 import type { Meeting } from '../types';
+import { sortMeetings } from '../utils/sortRecords';
 import { useAuth } from './useAuth';
 import { usePersistentState } from './usePersistentState';
 
@@ -39,7 +40,7 @@ export function useMeetings() {
     loadCloudMeetings()
       .then((cloudMeetings) => {
         if (cloudMeetings.length > 0) {
-          setMeetings(cloudMeetings);
+          setMeetings(sortMeetings(cloudMeetings));
           return;
         }
 
@@ -69,7 +70,7 @@ export function useMeetings() {
       id: crypto.randomUUID(),
     };
 
-    setMeetings((current) => [meeting, ...current]);
+    setMeetings((current) => sortMeetings([meeting, ...current]));
     if (cloudReady && user) {
       setSyncError('');
       void saveCloudMeeting(meeting).catch((error) => {

@@ -4,6 +4,7 @@ import { usePersistentState } from './usePersistentState';
 import { useAuth } from './useAuth';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Task } from '../types';
+import { sortTasks } from '../utils/sortRecords';
 
 type DraftTask = Omit<Task, 'id' | 'createdAt'>;
 
@@ -40,7 +41,7 @@ export function useTasks() {
     loadCloudTasks()
       .then((cloudTasks) => {
         if (cloudTasks.length > 0) {
-          setTasks(cloudTasks);
+          setTasks(sortTasks(cloudTasks));
           return;
         }
 
@@ -79,10 +80,10 @@ export function useTasks() {
     const newTask: Task = {
       ...draft,
       id: crypto.randomUUID(),
-      createdAt: new Date().toISOString().slice(0, 10),
+      createdAt: new Date().toISOString(),
     };
 
-    setTasks((current) => [newTask, ...current]);
+    setTasks((current) => sortTasks([newTask, ...current]));
     if (cloudReady && user) {
       setSyncError('');
       void saveCloudTask(newTask).catch((error) => {
@@ -93,9 +94,9 @@ export function useTasks() {
 
   function updateTask(taskId: string, updates: DraftTask) {
     const nextTask = tasks.find((task) => task.id === taskId);
-    setTasks((current) =>
+    setTasks((current) => sortTasks(
       current.map((task) => (task.id === taskId ? { ...task, ...updates } : task)),
-    );
+    ));
 
     if (nextTask && cloudReady && user) {
       setSyncError('');

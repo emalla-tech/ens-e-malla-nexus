@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { deleteCloudProject, loadCloudProjects, saveCloudProject } from '../services/syncService';
 import type { Project } from '../types';
+import { sortProjects } from '../utils/sortRecords';
 import { useAuth } from './useAuth';
 import { usePersistentState } from './usePersistentState';
 
@@ -39,7 +40,7 @@ export function useProjects() {
     loadCloudProjects()
       .then((cloudProjects) => {
         if (cloudProjects.length > 0) {
-          setProjects(cloudProjects);
+          setProjects(sortProjects(cloudProjects));
           return;
         }
 
@@ -72,7 +73,7 @@ export function useProjects() {
       completedTasks: 0,
     };
 
-    setProjects((current) => [project, ...current]);
+    setProjects((current) => sortProjects([project, ...current]));
     if (cloudReady && user) {
       setSyncError('');
       void saveCloudProject(project).catch((error) => {
@@ -83,9 +84,9 @@ export function useProjects() {
 
   function updateProject(projectId: string, updates: DraftProject) {
     const nextProject = projects.find((project) => project.id === projectId);
-    setProjects((current) =>
+    setProjects((current) => sortProjects(
       current.map((project) => (project.id === projectId ? { ...project, ...updates } : project)),
-    );
+    ));
 
     if (nextProject && cloudReady && user) {
       setSyncError('');
