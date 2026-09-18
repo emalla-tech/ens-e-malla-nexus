@@ -2,6 +2,7 @@ import { Bell, Download, Menu, Plus, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from './Button';
+import { Logo } from './Logo';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -45,10 +46,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           >
             <Menu size={21} />
           </Link>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-orange">Executive OS</p>
-            <h1 className="text-xl font-black text-brand-black sm:text-2xl">E-Malla Nexus</h1>
-          </div>
+          <Logo dark />
         </div>
 
         <div className="hidden min-h-10 w-full max-w-sm items-center gap-2 rounded-md bg-white px-3 text-gray-500 shadow-sm md:flex">

@@ -1,7 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#111111"/>
-  <rect x="54" y="54" width="404" height="404" rx="72" fill="#ff7a1a"/>
-  <rect x="82" y="82" width="348" height="348" rx="54" fill="#111111"/>
-  <text x="256" y="300" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="154" font-weight="900" fill="#ffffff">EN</text>
-  <text x="353" y="326" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="96" font-weight="900" fill="#ff7a1a">s</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ENs">
+  <rect width="512" height="512" rx="76" fill="#111111"/>
+  <path fill="#ffffff" d="M82 126h174v61H151v39h89v59h-89v40h105v61H82z"/>
+  <path fill="#ffffff" d="M222 126h65l92 143V126h67v260h-64l-93-143v143h-67z"/>
+  <text x="404" y="377" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="108" font-weight="900" fill="#ff7a1a">s</text>
 </svg>

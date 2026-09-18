@@ -4,15 +4,10 @@ interface LogoProps {
 
 export function Logo({ dark = false }: LogoProps) {
   return (
-    <div className="flex items-center gap-3" aria-label="ENs, E-Malla Nexus">
-      <div className="grid h-10 w-10 place-items-center rounded-md bg-brand-orange text-lg font-black text-white">
-        E
-      </div>
-      <div className="text-2xl font-black tracking-normal">
-        <span className="text-brand-orange">E</span>
-        <span className={dark ? 'text-brand-black' : 'text-white'}>N</span>
-        <span className="text-brand-orange">s</span>
-      </div>
-    </div>
+    <img
+      src={dark ? '/icons/ens-logo-dark.svg' : '/icons/ens-logo-light.svg'}
+      alt="ENs, E-Malla Nexus"
+      className="h-10 w-auto max-w-[170px] sm:h-12 sm:max-w-[205px]"
+    />
   );
 }
