@@ -28,7 +28,7 @@ export function TaskList({ tasks, projects, onEdit, onDelete, onComplete }: Task
   return (
     <div className="overflow-hidden rounded-md border border-gray-200 bg-white shadow-sm">
       <div className="hidden overflow-x-auto xl:block">
-        <table className="w-full min-w-[960px] text-left">
+        <table className="w-full min-w-[1120px] text-left">
           <thead className="bg-gray-50 text-xs uppercase text-gray-500">
             <tr>
               <th className="px-5 py-4">Task</th>
@@ -62,33 +62,36 @@ export function TaskList({ tasks, projects, onEdit, onDelete, onComplete }: Task
                     <Button
                       type="button"
                       variant="secondary"
-                      className="h-9 w-9 border border-emerald-200 bg-emerald-50 px-0 text-emerald-700 ring-0 hover:bg-emerald-100"
+                      className="h-9 border border-emerald-200 bg-emerald-50 px-3 text-emerald-700 ring-0 hover:bg-emerald-100"
                       onClick={() => onComplete(task.id)}
                       disabled={task.status === 'Completed'}
                       aria-label={`Complete ${task.title}`}
                       title="Complete task"
                     >
                       <Check size={18} strokeWidth={2.5} />
+                      Complete
                     </Button>
                     <Button
                       type="button"
                       variant="secondary"
-                      className="h-9 w-9 border border-gray-300 px-0 ring-0"
+                      className="h-9 border border-gray-300 px-3 ring-0"
                       onClick={() => onEdit(task)}
                       aria-label={`Edit ${task.title}`}
                       title="Edit task"
                     >
                       <Edit3 size={18} strokeWidth={2.5} />
+                      Edit
                     </Button>
                     <Button
                       type="button"
                       variant="danger"
-                      className="h-9 w-9 border border-red-200 px-0"
+                      className="h-9 border border-red-200 px-3"
                       onClick={() => onDelete(task.id)}
                       aria-label={`Delete ${task.title}`}
                       title="Delete task"
                     >
                       <Trash2 size={18} strokeWidth={2.5} />
+                      Delete
                     </Button>
                   </div>
                 </td>
