@@ -44,8 +44,8 @@ export function TaskForm({ projects, editingTask, onSubmit, onCancelEdit }: Task
       return;
     }
 
-    setDraft((current) => ({ ...emptyDraft, projectId: projects[0]?.id ?? current.projectId }));
-  }, [editingTask, projects]);
+    setDraft(emptyDraft);
+  }, [editingTask]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -55,7 +55,7 @@ export function TaskForm({ projects, editingTask, onSubmit, onCancelEdit }: Task
 
     onSubmit({ ...draft, title: draft.title.trim(), description: draft.description.trim() });
     if (!editingTask) {
-      setDraft({ ...emptyDraft, projectId: projects[0]?.id ?? emptyDraft.projectId });
+      setDraft(emptyDraft);
     }
   }
 
@@ -105,7 +105,7 @@ export function TaskForm({ projects, editingTask, onSubmit, onCancelEdit }: Task
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-semibold text-gray-700">Project</span>
+          <span className="text-sm font-semibold text-gray-700">Project <span className="font-normal text-gray-400">(optional)</span></span>
           <select
             value={draft.projectId}
             onChange={(event) => setDraft({ ...draft, projectId: event.target.value })}
