@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ens-shell-v3';
+const CACHE_NAME = 'ens-shell-v4';
 const APP_SHELL = [
   '/',
   '/index.html',
