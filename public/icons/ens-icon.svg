@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ENs">
   <rect width="512" height="512" rx="76" fill="#111111"/>
-  <path fill="#ffffff" d="M70 126h164v61H139v39h80v59h-80v40h95v61H70z"/>
-  <path fill="#ffffff" d="M198 126h58l78 137V126h58v260h-58l-78-137v137h-58z"/>
-  <text x="432" y="376" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="104" font-weight="900" fill="#ff7a1a">s</text>
+  <path fill="#ffffff" d="M76 126h177l102 145V126h63v260h-76L239 239v147H76z"/>
+  <path fill="#111111" d="M145 188h92v51h-92zM145 284h92v51h-92z"/>
+  <text x="439" y="379" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="102" font-weight="900" fill="#ff7a1a">s</text>
 </svg>

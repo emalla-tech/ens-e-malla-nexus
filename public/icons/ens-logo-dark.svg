@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 410 96" role="img" aria-label="ENs, E-Malla Nexus">
   <g transform="translate(2 5)">
-    <path fill="#ff7a1a" d="M0 25 47 0l41 23-17 10-24-13-29 16v24L0 70z"/>
-    <path fill="#111111" d="m0 70 18-10 29 16 24-13 17 10-41 23z"/>
-    <path fill="#111111" d="M47 35 65 25v38L47 73z"/>
+    <path fill="#ff7a1a" d="M0 24 47 0l42 22-17 10-25-13-30 16v15l30-16 17 9-47 25L0 59z"/>
+    <path fill="#111111" d="m0 68 17-9 30 16 25-13 17 10-42 23L0 70z"/>
+    <path fill="#111111" d="m47 34 17-9 25 14v33L72 62V48z"/>
   </g>
   <text x="112" y="61" font-family="Arial,Helvetica,sans-serif" font-size="59" font-weight="900"><tspan fill="#ff7a1a">E</tspan><tspan fill="#111111">N</tspan><tspan fill="#ff7a1a" font-size="43">s</tspan></text>
   <text x="115" y="84" font-family="Arial,Helvetica,sans-serif" font-size="16" font-weight="600" letter-spacing="2" fill="#555555">E-MALLA NEXUS</text>
