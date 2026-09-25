@@ -72,3 +72,48 @@ aside nav::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.22);
   border-radius: 999px;
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
+  body {
+    background: white !important;
+    color: #111111;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .report-page {
+    gap: 12px !important;
+    font-size: 11px;
+  }
+
+  .report-page > section,
+  .report-page article {
+    break-inside: avoid;
+  }
+
+  .report-page article {
+    box-shadow: none !important;
+    padding: 12px !important;
+  }
+
+  .report-page h1 {
+    font-size: 24px !important;
+  }
+
+  .report-page h2 {
+    font-size: 15px !important;
+  }
+
+  .report-page .cash-bars {
+    height: 120px !important;
+  }
+
+  .report-page .bar-area {
+    height: 90px !important;
+  }
+}
