@@ -46,7 +46,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
           open ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className="flex items-center justify-between">
+        <div className="flex shrink-0 items-center justify-between">
           <Logo />
           <button
             className="grid h-10 w-10 place-items-center rounded-md text-gray-300 hover:bg-white/10 lg:hidden"
@@ -57,7 +57,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
           </button>
         </div>
 
-        <nav className="mt-9 flex flex-1 flex-col gap-1">
+        <nav className="mt-7 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain pr-1">
           {navItems.map((item) => (
             <NavLink
               key={item.href}
@@ -79,7 +79,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
           ))}
         </nav>
 
-        <div className="rounded-md border border-white/10 bg-white/5 p-4">
+        <div className="mt-4 shrink-0 rounded-md border border-white/10 bg-white/5 p-4">
           <p className="text-sm font-semibold text-white">E-Malla Nexus</p>
           <p className="mt-2 text-xs leading-5 text-gray-400">
             Executive work, follow-ups, and decisions in one daily command center.
