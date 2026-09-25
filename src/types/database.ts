@@ -127,6 +127,11 @@ export interface Database {
           user_id: string;
           title: string;
           body: string;
+          folder: string;
+          tags: string[];
+          pinned: boolean;
+          linked_type: 'None' | 'Project' | 'Customer';
+          linked_id: string | null;
           created_at: string;
           updated_at: string;
         };

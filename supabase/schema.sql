@@ -78,6 +78,11 @@ create table if not exists public.notes (
   user_id uuid not null references auth.users(id) on delete cascade,
   title text not null,
   body text not null default '',
+  folder text not null default 'General',
+  tags text[] not null default '{}',
+  pinned boolean not null default false,
+  linked_type text not null default 'None' check (linked_type in ('None', 'Project', 'Customer')),
+  linked_id text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

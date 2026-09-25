@@ -76,6 +76,11 @@ export interface QuickNote {
   title: string;
   body: string;
   updatedAt: string;
+  folder: string;
+  tags: string[];
+  pinned: boolean;
+  linkedType: 'None' | 'Project' | 'Customer';
+  linkedId: string;
 }
 
 export interface Goal {

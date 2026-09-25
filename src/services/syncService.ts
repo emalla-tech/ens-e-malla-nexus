@@ -279,6 +279,11 @@ export async function loadCloudNotes(): Promise<QuickNote[]> {
     title: note.title,
     body: note.body,
     updatedAt: note.updated_at.slice(0, 10),
+    folder: note.folder ?? 'General',
+    tags: note.tags ?? [],
+    pinned: note.pinned ?? false,
+    linkedType: note.linked_type ?? 'None',
+    linkedId: note.linked_id ?? '',
   }));
 }
 
@@ -291,6 +296,11 @@ export async function saveCloudNote(note: QuickNote) {
     user_id: userId,
     title: note.title,
     body: note.body,
+    folder: note.folder,
+    tags: note.tags,
+    pinned: note.pinned,
+    linked_type: note.linkedType,
+    linked_id: note.linkedId || null,
     updated_at: note.updatedAt,
   });
 

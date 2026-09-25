@@ -23,7 +23,15 @@ function getSyncErrorMessage(error: unknown, fallback: string) {
 
 export function useNotes() {
   const { cloudReady, user } = useAuth();
-  const [notes, setNotes] = usePersistentState<QuickNote[]>('ens.notes.v1', []);
+  const [storedNotes, setNotes] = usePersistentState<QuickNote[]>('ens.notes.v1', []);
+  const notes = storedNotes.map((note) => ({
+    ...note,
+    folder: note.folder || 'General',
+    tags: note.tags || [],
+    pinned: note.pinned || false,
+    linkedType: note.linkedType || 'None',
+    linkedId: note.linkedId || '',
+  })).sort((first, second) => Number(second.pinned) - Number(first.pinned) || second.updatedAt.localeCompare(first.updatedAt));
   const [syncError, setSyncError] = useState('');
   const [syncing, setSyncing] = useState(false);
   const loadedCloudUser = useRef<string | null>(null);

@@ -234,12 +234,14 @@ export const mockNotes: QuickNote[] = [
     title: 'Hiring signal',
     body: 'Customer success capacity needs review before onboarding two more enterprise accounts.',
     updatedAt: isoToday,
+    folder: 'General', tags: ['team'], pinned: true, linkedType: 'None', linkedId: '',
   },
   {
     id: 'note-2',
     title: 'Founder focus',
     body: 'Keep this week centered on cash visibility, customer health, and unblock decisions.',
     updatedAt: isoToday,
+    folder: 'Ideas', tags: ['focus'], pinned: false, linkedType: 'None', linkedId: '',
   },
 ];
 
