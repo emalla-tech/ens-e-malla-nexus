@@ -1,4 +1,4 @@
-import type { Customer, FollowUp, Goal, Meeting, Project, QuickNote, Task } from '../types';
+import type { Customer, FollowUp, Goal, Meeting, Project, QuickNote, Reminder, Task } from '../types';
 import { getCurrentUserId } from './authService';
 import { supabase } from './supabase';
 
@@ -413,4 +413,41 @@ export async function deleteCloudGoal(goalId: string) {
   if (error) {
     throw error;
   }
+}
+
+export async function loadCloudReminders(): Promise<Reminder[]> {
+  const client = requireSupabase();
+  const userId = await requireUserId();
+  const { data, error } = await client.from('reminders').select('*').eq('user_id', userId).order('reminder_date').order('reminder_time');
+  if (error) throw error;
+  return (data ?? []).map((reminder) => ({
+    id: reminder.id,
+    title: reminder.title,
+    notes: reminder.notes,
+    category: reminder.category,
+    priority: reminder.priority,
+    date: reminder.reminder_date,
+    time: String(reminder.reminder_time).slice(0, 5),
+    repeat: reminder.repeat_interval,
+    status: reminder.status,
+    createdAt: reminder.created_at,
+  }));
+}
+
+export async function saveCloudReminder(reminder: Reminder) {
+  const client = requireSupabase();
+  const userId = await requireUserId();
+  const { error } = await client.from('reminders').upsert({
+    id: reminder.id, user_id: userId, title: reminder.title, notes: reminder.notes,
+    category: reminder.category, priority: reminder.priority, reminder_date: reminder.date,
+    reminder_time: reminder.time, repeat_interval: reminder.repeat, status: reminder.status,
+  });
+  if (error) throw error;
+}
+
+export async function deleteCloudReminder(reminderId: string) {
+  const client = requireSupabase();
+  const userId = await requireUserId();
+  const { error } = await client.from('reminders').delete().eq('id', reminderId).eq('user_id', userId);
+  if (error) throw error;
 }

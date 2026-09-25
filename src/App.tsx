@@ -8,6 +8,7 @@ import { NotesPage } from './pages/NotesPage';
 import { NotificationsPage } from './pages/NotificationsPage';
 import { ProjectDetailPage } from './pages/ProjectDetailPage';
 import { ProjectsPage } from './pages/ProjectsPage';
+import { RemindersPage } from './pages/RemindersPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TasksPage } from './pages/TasksPage';
 
@@ -21,6 +22,7 @@ export default function App() {
         <Route path="projects/:projectId" element={<ProjectDetailPage />} />
         <Route path="customers" element={<CustomersPage />} />
         <Route path="calendar" element={<CalendarPage />} />
+        <Route path="reminders" element={<RemindersPage />} />
         <Route path="notes" element={<NotesPage />} />
         <Route path="goals" element={<GoalsPage />} />
         <Route path="notifications" element={<NotificationsPage />} />

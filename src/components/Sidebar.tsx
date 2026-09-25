@@ -1,5 +1,6 @@
 import {
   Bell,
+  AlarmClock,
   CalendarDays,
   ClipboardCheck,
   Flag,
@@ -20,6 +21,7 @@ const navItems = [
   { label: 'Projects', href: '/projects', icon: FolderKanban },
   { label: 'Customers', href: '/customers', icon: Users },
   { label: 'Calendar', href: '/calendar', icon: CalendarDays },
+  { label: 'Reminders', href: '/reminders', icon: AlarmClock },
   { label: 'Notes', href: '/notes', icon: NotebookText },
   { label: 'Goals', href: '/goals', icon: Flag },
   { label: 'Notifications', href: '/notifications', icon: Bell },

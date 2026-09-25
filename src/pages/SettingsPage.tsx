@@ -165,6 +165,7 @@ export function SettingsPage() {
               <Toggle checked={preferences.meetings} label="Upcoming meeting reminders" onChange={(value) => updatePreference('meetings', value)} />
               <Toggle checked={preferences.followUps} label="Customer follow-up reminders" onChange={(value) => updatePreference('followUps', value)} />
               <Toggle checked={preferences.goals} label="Goal progress alerts" onChange={(value) => updatePreference('goals', value)} />
+              <Toggle checked={preferences.reminders} label="Standalone reminder alerts" onChange={(value) => updatePreference('reminders', value)} />
               <Toggle checked={preferences.sound} label="Use device notification sound" onChange={(value) => updatePreference('sound', value)} />
               <Toggle checked={preferences.vibration} label="Vibrate when supported" onChange={(value) => updatePreference('vibration', value)} />
             </div>

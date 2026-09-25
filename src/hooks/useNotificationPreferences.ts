@@ -6,6 +6,7 @@ export interface NotificationPreferences {
   meetings: boolean;
   followUps: boolean;
   goals: boolean;
+  reminders: boolean;
   sound: boolean;
   vibration: boolean;
   meetingReminderMinutes: number;
@@ -20,6 +21,7 @@ export const defaultNotificationPreferences: NotificationPreferences = {
   meetings: true,
   followUps: true,
   goals: true,
+  reminders: true,
   sound: true,
   vibration: true,
   meetingReminderMinutes: 30,

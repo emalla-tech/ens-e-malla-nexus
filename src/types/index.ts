@@ -86,6 +86,22 @@ export interface Goal {
   horizon: 'Weekly' | 'Monthly' | 'Quarterly';
 }
 
+export type ReminderCategory = 'Personal' | 'Business' | 'Customer' | 'Payment' | 'Call';
+export type ReminderRepeat = 'Once' | 'Daily' | 'Weekly' | 'Monthly';
+
+export interface Reminder {
+  id: string;
+  title: string;
+  notes: string;
+  category: ReminderCategory;
+  priority: Priority;
+  date: string;
+  time: string;
+  repeat: ReminderRepeat;
+  status: 'Active' | 'Completed';
+  createdAt: string;
+}
+
 export interface NotificationItem {
   id: string;
   title: string;

@@ -1,4 +1,4 @@
-import type { Customer, FollowUp, Meeting, Project, Task } from '../types';
+import type { Customer, FollowUp, Meeting, Project, Reminder, Task } from '../types';
 import { getLocalDateKey } from './date';
 
 function compareOperationalDates(firstDate: string, secondDate: string) {
@@ -38,6 +38,17 @@ export function sortFollowUps(followUps: FollowUp[]) {
 
 export function sortMeetings(meetings: Meeting[]) {
   return [...meetings].sort((first, second) => {
+    const dateOrder = compareOperationalDates(first.date, second.date);
+    if (dateOrder !== 0) return dateOrder;
+    return first.date < getLocalDateKey()
+      ? second.time.localeCompare(first.time)
+      : first.time.localeCompare(second.time);
+  });
+}
+
+export function sortReminders(reminders: Reminder[]) {
+  return [...reminders].sort((first, second) => {
+    if (first.status !== second.status) return first.status === 'Active' ? -1 : 1;
     const dateOrder = compareOperationalDates(first.date, second.date);
     if (dateOrder !== 0) return dateOrder;
     return first.date < getLocalDateKey()

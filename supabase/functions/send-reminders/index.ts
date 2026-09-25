@@ -7,6 +7,7 @@ interface Preferences {
   meetings?: boolean;
   meetingReminderMinutes?: number;
   followUps?: boolean;
+  reminders?: boolean;
   sound?: boolean;
   vibration?: boolean;
   quietHoursEnabled?: boolean;
@@ -102,6 +103,19 @@ Deno.serve(async (request) => {
         const meetingMinutes = timeToMinutes(String(meeting.time));
         if (meetingMinutes - currentMinutes > reminderWindow) continue;
         alerts.push({ key: `meeting:${meeting.id}:${date}`, title: `Meeting at ${String(meeting.time).slice(0, 5)}`, body: `${meeting.title} · ${meeting.location}`, url: '/calendar' });
+      }
+    }
+    if (preferences.reminders !== false) {
+      const { data: reminders } = await supabase.from('reminders').select('id,title,notes,category,reminder_date,reminder_time').eq('user_id', subscription.user_id).eq('status', 'Active').lte('reminder_date', date).limit(10);
+      for (const reminder of reminders ?? []) {
+        const reminderTime = String(reminder.reminder_time).slice(0, 5);
+        if (reminder.reminder_date === date && reminderTime > time) continue;
+        alerts.push({
+          key: `reminder:${reminder.id}:${reminder.reminder_date}:${reminderTime}`,
+          title: `Reminder: ${reminder.title}`,
+          body: reminder.notes || `${reminder.category} reminder`,
+          url: '/reminders',
+        });
       }
     }
 

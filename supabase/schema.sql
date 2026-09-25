@@ -105,6 +105,21 @@ create table if not exists public.goals (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.reminders (
+  id text primary key default gen_random_uuid()::text,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  notes text not null default '',
+  category text not null default 'Business' check (category in ('Personal', 'Business', 'Customer', 'Payment', 'Call')),
+  priority text not null default 'Medium' check (priority in ('Critical', 'High', 'Medium', 'Low')),
+  reminder_date date not null default current_date,
+  reminder_time time not null default '09:00',
+  repeat_interval text not null default 'Once' check (repeat_interval in ('Once', 'Daily', 'Weekly', 'Monthly')),
+  status text not null default 'Active' check (status in ('Active', 'Completed')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.push_subscriptions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -133,6 +148,7 @@ alter table public.follow_ups enable row level security;
 alter table public.notes enable row level security;
 alter table public.meetings enable row level security;
 alter table public.goals enable row level security;
+alter table public.reminders enable row level security;
 alter table public.push_subscriptions enable row level security;
 alter table public.notification_deliveries enable row level security;
 
@@ -158,6 +174,9 @@ create policy "meetings are user-owned" on public.meetings
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 create policy "goals are user-owned" on public.goals
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "reminders are user-owned" on public.reminders
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 create policy "push subscriptions are user-owned" on public.push_subscriptions

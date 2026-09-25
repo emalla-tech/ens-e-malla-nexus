@@ -174,6 +174,28 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['goals']['Row']>;
         Relationships: [];
       };
+      reminders: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          notes: string;
+          category: 'Personal' | 'Business' | 'Customer' | 'Payment' | 'Call';
+          priority: 'Critical' | 'High' | 'Medium' | 'Low';
+          reminder_date: string;
+          reminder_time: string;
+          repeat_interval: 'Once' | 'Daily' | 'Weekly' | 'Monthly';
+          status: 'Active' | 'Completed';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['reminders']['Row']> & {
+          user_id: string;
+          title: string;
+        };
+        Update: Partial<Database['public']['Tables']['reminders']['Row']>;
+        Relationships: [];
+      };
       push_subscriptions: {
         Row: {
           id: string;

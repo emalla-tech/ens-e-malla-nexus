@@ -1,15 +1,16 @@
-import { Bell, CalendarClock, CheckCheck, CheckCircle2, ClipboardCheck, Flag, RefreshCw, Users } from 'lucide-react';
+import { AlarmClock, Bell, CalendarClock, CheckCheck, CheckCircle2, ClipboardCheck, Flag, RefreshCw, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useFollowUps } from '../hooks/useFollowUps';
 import { useGoals } from '../hooks/useGoals';
 import { useMeetings } from '../hooks/useMeetings';
+import { useReminders } from '../hooks/useReminders';
 import { usePersistentState } from '../hooks/usePersistentState';
 import { useTasks } from '../hooks/useTasks';
 import { formatShortDate } from '../utils/date';
 import { getLiveTasks } from '../utils/projects';
 
-type AlertKind = 'Task' | 'Meeting' | 'Follow-up' | 'Goal';
+type AlertKind = 'Task' | 'Meeting' | 'Follow-up' | 'Goal' | 'Reminder';
 type AlertUrgency = 'urgent' | 'upcoming' | 'progress';
 type Filter = 'All' | 'Unread' | 'Urgent';
 
@@ -24,7 +25,7 @@ interface ExecutiveAlert {
   sortDate: string;
 }
 
-const iconByKind = { Task: ClipboardCheck, Meeting: CalendarClock, 'Follow-up': Users, Goal: Flag };
+const iconByKind = { Task: ClipboardCheck, Meeting: CalendarClock, 'Follow-up': Users, Goal: Flag, Reminder: AlarmClock };
 
 function daysFromToday(date: string) {
   const today = new Date();
@@ -37,6 +38,7 @@ export function NotificationsPage() {
   const { meetings, syncing: meetingsSyncing, syncFromCloud: syncMeetings } = useMeetings();
   const { followUps, syncing: followUpsSyncing, syncFromCloud: syncFollowUps } = useFollowUps();
   const { goals, syncing: goalsSyncing, syncFromCloud: syncGoals } = useGoals();
+  const { reminders, syncing: remindersSyncing, syncFromCloud: syncReminders } = useReminders();
   const [readIds, setReadIds] = usePersistentState<string[]>('ens.notifications.read.v1', []);
   const [filter, setFilter] = useState<Filter>('All');
 
@@ -68,16 +70,23 @@ export function NotificationsPage() {
       items.push({ id: `goal-${goal.id}-${goal.progress}`, kind: 'Goal', urgency: 'progress', title: `Goal needs momentum: ${goal.title}`, description: `${goal.horizon} goal is currently ${goal.progress}% complete.`, dateLabel: `${goal.progress}% complete`, href: '/goals', sortDate: '9999-12-31' });
     });
 
+    reminders.forEach((reminder) => {
+      if (reminder.status === 'Completed') return;
+      const days = daysFromToday(reminder.date);
+      if (days > 1) return;
+      items.push({ id: `reminder-${reminder.id}-${reminder.date}-${reminder.time}`, kind: 'Reminder', urgency: days < 0 ? 'urgent' : 'upcoming', title: days < 0 ? `Reminder overdue: ${reminder.title}` : `${days === 0 ? 'Today' : 'Tomorrow'} at ${reminder.time}: ${reminder.title}`, description: reminder.notes || `${reminder.category} reminder`, dateLabel: formatShortDate(reminder.date), href: '/reminders', sortDate: reminder.date });
+    });
+
     return items.sort((first, second) => {
       if (first.urgency === 'urgent' && second.urgency !== 'urgent') return -1;
       if (first.urgency !== 'urgent' && second.urgency === 'urgent') return 1;
       return first.sortDate.localeCompare(second.sortDate);
     });
-  }, [followUps, goals, meetings, tasks]);
+  }, [followUps, goals, meetings, reminders, tasks]);
 
   const unreadCount = alerts.filter((alert) => !readIds.includes(alert.id)).length;
   const visibleAlerts = alerts.filter((alert) => filter === 'Unread' ? !readIds.includes(alert.id) : filter === 'Urgent' ? alert.urgency === 'urgent' : true);
-  const syncing = tasksSyncing || meetingsSyncing || followUpsSyncing || goalsSyncing;
+  const syncing = tasksSyncing || meetingsSyncing || followUpsSyncing || goalsSyncing || remindersSyncing;
 
   function markRead(alertId: string) {
     setReadIds((current) => current.includes(alertId) ? current : [...current, alertId]);
@@ -88,6 +97,7 @@ export function NotificationsPage() {
     syncMeetings();
     syncFollowUps();
     syncGoals();
+    syncReminders();
   }
 
   return (
