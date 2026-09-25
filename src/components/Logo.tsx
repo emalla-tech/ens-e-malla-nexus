@@ -5,9 +5,9 @@ interface LogoProps {
 export function Logo({ dark = false }: LogoProps) {
   return (
     <img
-      src={dark ? '/icons/ens-logo-dark.svg' : '/icons/ens-logo-light.svg'}
+      src={dark ? '/icons/ens-logo-right.png' : '/icons/ens-logo-left.png'}
       alt="ENs, E-Malla Nexus"
-      className="h-10 w-auto max-w-[170px] sm:h-12 sm:max-w-[205px]"
+      className="h-11 w-auto max-w-[150px] object-contain sm:h-14 sm:max-w-[180px]"
     />
   );
 }

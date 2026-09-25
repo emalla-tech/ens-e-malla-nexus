@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ens-shell-v4';
+const CACHE_NAME = 'ens-shell-v5';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -6,6 +6,8 @@ const APP_SHELL = [
   '/icons/ens-icon.svg',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
+  '/icons/ens-logo-left.png',
+  '/icons/ens-logo-right.png',
 ];
 
 self.addEventListener('install', (event) => {
