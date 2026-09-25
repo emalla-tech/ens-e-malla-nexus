@@ -1,7 +1,8 @@
-import { AlarmClock, Bell, CalendarClock, CheckCheck, CheckCircle2, ClipboardCheck, Flag, RefreshCw, Users } from 'lucide-react';
+import { AlarmClock, Bell, CalendarClock, CheckCheck, CheckCircle2, ClipboardCheck, Flag, Landmark, RefreshCw, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useFollowUps } from '../hooks/useFollowUps';
+import { useFinance } from '../hooks/useFinance';
 import { useGoals } from '../hooks/useGoals';
 import { useMeetings } from '../hooks/useMeetings';
 import { useReminders } from '../hooks/useReminders';
@@ -10,7 +11,7 @@ import { useTasks } from '../hooks/useTasks';
 import { formatShortDate } from '../utils/date';
 import { getLiveTasks } from '../utils/projects';
 
-type AlertKind = 'Task' | 'Meeting' | 'Follow-up' | 'Goal' | 'Reminder';
+type AlertKind = 'Task' | 'Meeting' | 'Follow-up' | 'Goal' | 'Reminder' | 'Finance';
 type AlertUrgency = 'urgent' | 'upcoming' | 'progress';
 type Filter = 'All' | 'Unread' | 'Urgent';
 
@@ -25,7 +26,7 @@ interface ExecutiveAlert {
   sortDate: string;
 }
 
-const iconByKind = { Task: ClipboardCheck, Meeting: CalendarClock, 'Follow-up': Users, Goal: Flag, Reminder: AlarmClock };
+const iconByKind = { Task: ClipboardCheck, Meeting: CalendarClock, 'Follow-up': Users, Goal: Flag, Reminder: AlarmClock, Finance: Landmark };
 
 function daysFromToday(date: string) {
   const today = new Date();
@@ -37,6 +38,7 @@ export function NotificationsPage() {
   const { tasks, syncing: tasksSyncing, syncFromCloud: syncTasks } = useTasks();
   const { meetings, syncing: meetingsSyncing, syncFromCloud: syncMeetings } = useMeetings();
   const { followUps, syncing: followUpsSyncing, syncFromCloud: syncFollowUps } = useFollowUps();
+  const { invoices, syncing: financeSyncing, syncFromCloud: syncFinance } = useFinance();
   const { goals, syncing: goalsSyncing, syncFromCloud: syncGoals } = useGoals();
   const { reminders, syncing: remindersSyncing, syncFromCloud: syncReminders } = useReminders();
   const [readIds, setReadIds] = usePersistentState<string[]>('ens.notifications.read.v1', []);
@@ -77,16 +79,23 @@ export function NotificationsPage() {
       items.push({ id: `reminder-${reminder.id}-${reminder.date}-${reminder.time}`, kind: 'Reminder', urgency: days < 0 ? 'urgent' : 'upcoming', title: days < 0 ? `Reminder overdue: ${reminder.title}` : `${days === 0 ? 'Today' : 'Tomorrow'} at ${reminder.time}: ${reminder.title}`, description: reminder.notes || `${reminder.category} reminder`, dateLabel: formatShortDate(reminder.date), href: '/reminders', sortDate: reminder.date });
     });
 
+    invoices.forEach((invoice) => {
+      if (invoice.status === 'Paid' || invoice.status === 'Cancelled' || invoice.status === 'Draft') return;
+      const days = daysFromToday(invoice.dueDate);
+      if (days > 3) return;
+      items.push({ id: `invoice-${invoice.id}-${invoice.dueDate}-${invoice.status}`, kind: 'Finance', urgency: days < 0 ? 'urgent' : 'upcoming', title: days < 0 ? `Invoice overdue: ${invoice.invoiceNumber}` : `Payment due ${days === 0 ? 'today' : `in ${days} day${days === 1 ? '' : 's'}`}`, description: `${invoice.customerName} owes RWF ${invoice.amount.toLocaleString()}.`, dateLabel: formatShortDate(invoice.dueDate), href: '/finance', sortDate: invoice.dueDate });
+    });
+
     return items.sort((first, second) => {
       if (first.urgency === 'urgent' && second.urgency !== 'urgent') return -1;
       if (first.urgency !== 'urgent' && second.urgency === 'urgent') return 1;
       return first.sortDate.localeCompare(second.sortDate);
     });
-  }, [followUps, goals, meetings, reminders, tasks]);
+  }, [followUps, goals, invoices, meetings, reminders, tasks]);
 
   const unreadCount = alerts.filter((alert) => !readIds.includes(alert.id)).length;
   const visibleAlerts = alerts.filter((alert) => filter === 'Unread' ? !readIds.includes(alert.id) : filter === 'Urgent' ? alert.urgency === 'urgent' : true);
-  const syncing = tasksSyncing || meetingsSyncing || followUpsSyncing || goalsSyncing || remindersSyncing;
+  const syncing = tasksSyncing || meetingsSyncing || followUpsSyncing || goalsSyncing || remindersSyncing || financeSyncing;
 
   function markRead(alertId: string) {
     setReadIds((current) => current.includes(alertId) ? current : [...current, alertId]);
@@ -98,6 +107,7 @@ export function NotificationsPage() {
     syncFollowUps();
     syncGoals();
     syncReminders();
+    syncFinance();
   }
 
   return (

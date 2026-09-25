@@ -4,6 +4,7 @@ import { CalendarPage } from './pages/CalendarPage';
 import { CustomersPage } from './pages/CustomersPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { GoalsPage } from './pages/GoalsPage';
+import { FinancePage } from './pages/FinancePage';
 import { NotesPage } from './pages/NotesPage';
 import { NotificationsPage } from './pages/NotificationsPage';
 import { ProjectDetailPage } from './pages/ProjectDetailPage';
@@ -21,6 +22,7 @@ export default function App() {
         <Route path="projects" element={<ProjectsPage />} />
         <Route path="projects/:projectId" element={<ProjectDetailPage />} />
         <Route path="customers" element={<CustomersPage />} />
+        <Route path="finance" element={<FinancePage />} />
         <Route path="calendar" element={<CalendarPage />} />
         <Route path="reminders" element={<RemindersPage />} />
         <Route path="notes" element={<NotesPage />} />

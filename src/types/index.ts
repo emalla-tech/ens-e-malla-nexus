@@ -107,6 +107,31 @@ export interface Reminder {
   createdAt: string;
 }
 
+export interface FinanceTransaction {
+  id: string;
+  type: 'Income' | 'Expense';
+  description: string;
+  category: string;
+  amount: number;
+  date: string;
+  paymentMethod: 'Cash' | 'Bank' | 'Mobile Money' | 'Card' | 'Other';
+  reference: string;
+  createdAt: string;
+}
+
+export interface Invoice {
+  id: string;
+  invoiceNumber: string;
+  customerId: string;
+  customerName: string;
+  description: string;
+  amount: number;
+  issueDate: string;
+  dueDate: string;
+  status: 'Draft' | 'Sent' | 'Paid' | 'Overdue' | 'Cancelled';
+  createdAt: string;
+}
+
 export interface NotificationItem {
   id: string;
   title: string;

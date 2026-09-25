@@ -1,4 +1,4 @@
-import type { Customer, FollowUp, Goal, Meeting, Project, QuickNote, Reminder, Task } from '../types';
+import type { Customer, FinanceTransaction, FollowUp, Goal, Invoice, Meeting, Project, QuickNote, Reminder, Task } from '../types';
 import { getCurrentUserId } from './authService';
 import { supabase } from './supabase';
 
@@ -460,4 +460,40 @@ export async function deleteCloudReminder(reminderId: string) {
   const userId = await requireUserId();
   const { error } = await client.from('reminders').delete().eq('id', reminderId).eq('user_id', userId);
   if (error) throw error;
+}
+
+export async function loadCloudTransactions(): Promise<FinanceTransaction[]> {
+  const client = requireSupabase(); const userId = await requireUserId();
+  const { data, error } = await client.from('finance_transactions').select('*').eq('user_id', userId).order('transaction_date', { ascending: false }).order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((item) => ({ id: item.id, type: item.type, description: item.description, category: item.category, amount: Number(item.amount), date: item.transaction_date, paymentMethod: item.payment_method, reference: item.reference, createdAt: item.created_at }));
+}
+
+export async function saveCloudTransaction(item: FinanceTransaction) {
+  const client = requireSupabase(); const userId = await requireUserId();
+  const { error } = await client.from('finance_transactions').upsert({ id: item.id, user_id: userId, type: item.type, description: item.description, category: item.category, amount: item.amount, transaction_date: item.date, payment_method: item.paymentMethod, reference: item.reference });
+  if (error) throw error;
+}
+
+export async function deleteCloudTransaction(id: string) {
+  const client = requireSupabase(); const userId = await requireUserId();
+  const { error } = await client.from('finance_transactions').delete().eq('id', id).eq('user_id', userId); if (error) throw error;
+}
+
+export async function loadCloudInvoices(): Promise<Invoice[]> {
+  const client = requireSupabase(); const userId = await requireUserId();
+  const { data, error } = await client.from('invoices').select('*').eq('user_id', userId).order('due_date').order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((item) => ({ id: item.id, invoiceNumber: item.invoice_number, customerId: item.customer_id ?? '', customerName: item.customer_name, description: item.description, amount: Number(item.amount), issueDate: item.issue_date, dueDate: item.due_date, status: item.status, createdAt: item.created_at }));
+}
+
+export async function saveCloudInvoice(item: Invoice) {
+  const client = requireSupabase(); const userId = await requireUserId();
+  const { error } = await client.from('invoices').upsert({ id: item.id, user_id: userId, invoice_number: item.invoiceNumber, customer_id: item.customerId || null, customer_name: item.customerName, description: item.description, amount: item.amount, issue_date: item.issueDate, due_date: item.dueDate, status: item.status });
+  if (error) throw error;
+}
+
+export async function deleteCloudInvoice(id: string) {
+  const client = requireSupabase(); const userId = await requireUserId();
+  const { error } = await client.from('invoices').delete().eq('id', id).eq('user_id', userId); if (error) throw error;
 }

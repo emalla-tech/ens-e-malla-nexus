@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .control {
+    @apply min-h-11 w-full rounded-md border border-gray-200 bg-white px-3 outline-none transition focus:border-brand-orange focus:ring-2 focus:ring-orange-100;
+  }
+}
+
 :root {
   color: #222222;
   background: #f4f5f7;

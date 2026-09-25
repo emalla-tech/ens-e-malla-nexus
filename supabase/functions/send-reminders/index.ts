@@ -8,6 +8,7 @@ interface Preferences {
   meetingReminderMinutes?: number;
   followUps?: boolean;
   reminders?: boolean;
+  finance?: boolean;
   sound?: boolean;
   vibration?: boolean;
   quietHoursEnabled?: boolean;
@@ -117,6 +118,10 @@ Deno.serve(async (request) => {
           url: '/reminders',
         });
       }
+    }
+    if (preferences.finance !== false) {
+      const { data: invoices } = await supabase.from('invoices').select('id,invoice_number,customer_name,amount,due_date,status').eq('user_id', subscription.user_id).lt('due_date', date).not('status', 'in', '(Paid,Cancelled,Draft)').limit(5);
+      for (const invoice of invoices ?? []) alerts.push({ key: `invoice:${invoice.id}:${date}`, title: `Invoice overdue: ${invoice.invoice_number}`, body: `${invoice.customer_name} owes RWF ${Number(invoice.amount).toLocaleString()}`, url: '/finance' });
     }
 
     for (const alert of alerts) {

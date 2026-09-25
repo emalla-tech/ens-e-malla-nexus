@@ -201,6 +201,18 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['reminders']['Row']>;
         Relationships: [];
       };
+      finance_transactions: {
+        Row: { id: string; user_id: string; type: 'Income' | 'Expense'; description: string; category: string; amount: number; transaction_date: string; payment_method: 'Cash' | 'Bank' | 'Mobile Money' | 'Card' | 'Other'; reference: string; created_at: string; updated_at: string };
+        Insert: Partial<Database['public']['Tables']['finance_transactions']['Row']> & { user_id: string; description: string; amount: number };
+        Update: Partial<Database['public']['Tables']['finance_transactions']['Row']>;
+        Relationships: [];
+      };
+      invoices: {
+        Row: { id: string; user_id: string; invoice_number: string; customer_id: string | null; customer_name: string; description: string; amount: number; issue_date: string; due_date: string; status: 'Draft' | 'Sent' | 'Paid' | 'Overdue' | 'Cancelled'; created_at: string; updated_at: string };
+        Insert: Partial<Database['public']['Tables']['invoices']['Row']> & { user_id: string; invoice_number: string; customer_name: string; amount: number };
+        Update: Partial<Database['public']['Tables']['invoices']['Row']>;
+        Relationships: [];
+      };
       push_subscriptions: {
         Row: {
           id: string;
