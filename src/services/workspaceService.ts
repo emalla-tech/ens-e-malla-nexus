@@ -15,7 +15,23 @@ export async function loadWorkspaces(): Promise<Workspace[]> {
   const ids = (memberships ?? []).map((item) => item.workspace_id); if (!ids.length) return [];
   const { data: workspaces, error: workspaceError } = await supabase.from('workspaces').select('*').in('id', ids);
   if (workspaceError) throw workspaceError;
-  return (workspaces ?? []).map((workspace) => ({ id: workspace.id, name: workspace.name, slug: workspace.slug, type: workspace.type, ownerId: workspace.owner_id, currency: workspace.currency, timezone: workspace.timezone, role: memberships?.find((item) => item.workspace_id === workspace.id)?.role ?? 'Member' }));
+  return (workspaces ?? []).map((workspace) => ({ id: workspace.id, name: workspace.name, slug: workspace.slug, type: workspace.type, ownerId: workspace.owner_id, currency: workspace.currency, timezone: workspace.timezone, country: workspace.country ?? 'RW', industry: workspace.industry ?? '', enabledModules: workspace.enabled_modules ?? [], plan: workspace.plan ?? 'Personal', onboardingComplete: workspace.onboarding_complete ?? true, trialEndsAt: workspace.trial_ends_at ?? '', role: memberships?.find((item) => item.workspace_id === workspace.id)?.role ?? 'Member' }));
+}
+
+export interface WorkspaceSetup { name: string; type: 'Personal' | 'Company'; country: string; currency: string; timezone: string; industry: string; enabledModules: string[]; plan: 'Personal' | 'Business' | 'Professional'; }
+
+export async function completeWorkspaceSetup(workspaceId: string, setup: WorkspaceSetup) {
+  if (!supabase) throw new Error('Supabase is not configured.');
+  const slug = `${setup.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${workspaceId.slice(0, 6)}`;
+  const { error } = await supabase.from('workspaces').update({ name: setup.name, slug, type: setup.type, country: setup.country, currency: setup.currency, timezone: setup.timezone, industry: setup.industry, enabled_modules: setup.enabledModules, plan: setup.plan, onboarding_complete: true }).eq('id', workspaceId);
+  if (error) throw error;
+}
+
+export async function createWorkspace(setup: WorkspaceSetup) {
+  if (!supabase) throw new Error('Supabase is not configured.');
+  const { data, error } = await supabase.rpc('create_workspace', { workspace_name: setup.name, workspace_type: setup.type, workspace_country: setup.country, workspace_currency: setup.currency, workspace_timezone: setup.timezone, workspace_industry: setup.industry, workspace_modules: setup.enabledModules, workspace_plan: setup.plan });
+  if (error) throw error;
+  storeWorkspaceId(data); return data;
 }
 
 export async function requireActiveWorkspaceId() {

@@ -133,7 +133,7 @@ export interface Invoice {
 }
 
 export type WorkspaceRole = 'Owner' | 'Admin' | 'Member';
-export interface Workspace { id: string; name: string; slug: string; type: 'Personal' | 'Company'; ownerId: string; currency: string; timezone: string; role: WorkspaceRole; }
+export interface Workspace { id: string; name: string; slug: string; type: 'Personal' | 'Company'; ownerId: string; currency: string; timezone: string; country: string; industry: string; enabledModules: string[]; plan: 'Personal' | 'Business' | 'Professional'; onboardingComplete: boolean; trialEndsAt: string; role: WorkspaceRole; }
 export interface WorkspaceMember { id: string; userId: string; fullName: string; email: string; role: WorkspaceRole; joinedAt: string; }
 
 export interface NotificationItem {

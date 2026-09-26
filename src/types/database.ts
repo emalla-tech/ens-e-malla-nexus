@@ -26,7 +26,7 @@ export interface Database {
         Relationships: [];
       };
       workspaces: {
-        Row: { id: string; name: string; slug: string; type: 'Personal' | 'Company'; owner_id: string; currency: string; timezone: string; created_at: string; updated_at: string };
+        Row: { id: string; name: string; slug: string; type: 'Personal' | 'Company'; owner_id: string; currency: string; timezone: string; country: string; industry: string; enabled_modules: string[]; plan: 'Personal' | 'Business' | 'Professional'; onboarding_complete: boolean; trial_ends_at: string; created_at: string; updated_at: string };
         Insert: Partial<Database['public']['Tables']['workspaces']['Row']> & { name: string; slug: string; owner_id: string };
         Update: Partial<Database['public']['Tables']['workspaces']['Row']>;
         Relationships: [];
@@ -279,6 +279,7 @@ export interface Database {
     };
     Functions: {
       claim_workspace_invitations: { Args: Record<PropertyKey, never>; Returns: number };
+      create_workspace: { Args: { workspace_name: string; workspace_type: string; workspace_country: string; workspace_currency: string; workspace_timezone: string; workspace_industry: string; workspace_modules: string[]; workspace_plan: string }; Returns: string };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

@@ -1,10 +1,17 @@
 import { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Sidebar } from '../components/Sidebar';
+import { useWorkspace } from '../hooks/useWorkspace';
 
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { activeWorkspace, loading } = useWorkspace();
+  const location = useLocation();
+
+  if (!loading && activeWorkspace && !activeWorkspace.onboardingComplete && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />;
+  }
 
   return (
     <div className="min-h-screen lg:flex">

@@ -17,6 +17,7 @@ import {
 import { NavLink } from 'react-router-dom';
 import { Logo } from './Logo';
 import { cn } from '../utils/cn';
+import { useWorkspace } from '../hooks/useWorkspace';
 
 const navItems = [
   { label: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -40,6 +41,8 @@ interface SidebarProps {
 }
 
 export function Sidebar({ open, onClose }: SidebarProps) {
+  const { activeWorkspace } = useWorkspace();
+  const visibleItems = navItems.filter((item) => ['Dashboard', 'Notifications', 'Team', 'Settings'].includes(item.label) || !activeWorkspace?.enabledModules.length || activeWorkspace.enabledModules.includes(item.label));
   return (
     <>
       <aside
@@ -60,7 +63,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         </div>
 
         <nav className="mt-7 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain pr-1">
-          {navItems.map((item) => (
+          {visibleItems.map((item) => (
             <NavLink
               key={item.href}
               to={item.href}

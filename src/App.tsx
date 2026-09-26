@@ -14,6 +14,7 @@ import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TasksPage } from './pages/TasksPage';
 import { TeamPage } from './pages/TeamPage';
+import { OnboardingPage } from './pages/OnboardingPage';
 
 export default function App() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="finance" element={<FinancePage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="team" element={<TeamPage />} />
+        <Route path="onboarding" element={<OnboardingPage />} />
         <Route path="calendar" element={<CalendarPage />} />
         <Route path="reminders" element={<RemindersPage />} />
         <Route path="notes" element={<NotesPage />} />
