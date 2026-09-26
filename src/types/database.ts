@@ -25,10 +25,29 @@ export interface Database {
         };
         Relationships: [];
       };
+      workspaces: {
+        Row: { id: string; name: string; slug: string; type: 'Personal' | 'Company'; owner_id: string; currency: string; timezone: string; created_at: string; updated_at: string };
+        Insert: Partial<Database['public']['Tables']['workspaces']['Row']> & { name: string; slug: string; owner_id: string };
+        Update: Partial<Database['public']['Tables']['workspaces']['Row']>;
+        Relationships: [];
+      };
+      workspace_members: {
+        Row: { id: string; workspace_id: string; user_id: string; role: 'Owner' | 'Admin' | 'Member'; status: 'Active' | 'Suspended'; joined_at: string };
+        Insert: Partial<Database['public']['Tables']['workspace_members']['Row']> & { workspace_id: string; user_id: string };
+        Update: Partial<Database['public']['Tables']['workspace_members']['Row']>;
+        Relationships: [];
+      };
+      workspace_invitations: {
+        Row: { id: string; workspace_id: string; email: string; role: 'Admin' | 'Member'; status: 'Pending' | 'Accepted' | 'Revoked'; invited_by: string; created_at: string; expires_at: string };
+        Insert: Partial<Database['public']['Tables']['workspace_invitations']['Row']> & { workspace_id: string; email: string; invited_by: string };
+        Update: Partial<Database['public']['Tables']['workspace_invitations']['Row']>;
+        Relationships: [];
+      };
       projects: {
         Row: {
           id: string;
           user_id: string;
+          workspace_id?: string;
           name: string;
           description: string;
           status: 'Planning' | 'Active' | 'At Risk' | 'Completed';
@@ -43,6 +62,7 @@ export interface Database {
         };
         Insert: Partial<Database['public']['Tables']['projects']['Row']> & {
           user_id: string;
+          workspace_id?: string;
           name: string;
         };
         Update: Partial<Database['public']['Tables']['projects']['Row']>;
@@ -52,6 +72,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
+          workspace_id?: string;
           title: string;
           description: string;
           priority: 'Critical' | 'High' | 'Medium' | 'Low';
@@ -65,6 +86,7 @@ export interface Database {
         };
         Insert: Partial<Database['public']['Tables']['tasks']['Row']> & {
           user_id: string;
+          workspace_id?: string;
           title: string;
         };
         Update: Partial<Database['public']['Tables']['tasks']['Row']>;
@@ -74,6 +96,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
+          workspace_id?: string;
           name: string;
           company: string;
           email: string;
@@ -90,6 +113,7 @@ export interface Database {
         };
         Insert: Partial<Database['public']['Tables']['customers']['Row']> & {
           user_id: string;
+          workspace_id?: string;
           company: string;
           name: string;
         };
@@ -100,6 +124,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
+          workspace_id?: string;
           customer_id: string;
           customer: string;
           note: string;
@@ -114,6 +139,7 @@ export interface Database {
         };
         Insert: Partial<Database['public']['Tables']['follow_ups']['Row']> & {
           user_id: string;
+          workspace_id?: string;
           customer_id: string;
           customer: string;
           note: string;
@@ -125,6 +151,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
+          workspace_id?: string;
           title: string;
           body: string;
           folder: string;
@@ -137,6 +164,7 @@ export interface Database {
         };
         Insert: Partial<Database['public']['Tables']['notes']['Row']> & {
           user_id: string;
+          workspace_id?: string;
           title: string;
         };
         Update: Partial<Database['public']['Tables']['notes']['Row']>;
@@ -146,6 +174,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
+          workspace_id?: string;
           title: string;
           date: string;
           time: string;
@@ -156,6 +185,7 @@ export interface Database {
         };
         Insert: Partial<Database['public']['Tables']['meetings']['Row']> & {
           user_id: string;
+          workspace_id?: string;
           title: string;
         };
         Update: Partial<Database['public']['Tables']['meetings']['Row']>;
@@ -165,6 +195,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
+          workspace_id?: string;
           title: string;
           progress: number;
           owner: string;
@@ -174,6 +205,7 @@ export interface Database {
         };
         Insert: Partial<Database['public']['Tables']['goals']['Row']> & {
           user_id: string;
+          workspace_id?: string;
           title: string;
         };
         Update: Partial<Database['public']['Tables']['goals']['Row']>;
@@ -183,6 +215,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
+          workspace_id?: string;
           title: string;
           notes: string;
           category: 'Personal' | 'Business' | 'Customer' | 'Payment' | 'Call';
@@ -196,19 +229,20 @@ export interface Database {
         };
         Insert: Partial<Database['public']['Tables']['reminders']['Row']> & {
           user_id: string;
+          workspace_id?: string;
           title: string;
         };
         Update: Partial<Database['public']['Tables']['reminders']['Row']>;
         Relationships: [];
       };
       finance_transactions: {
-        Row: { id: string; user_id: string; type: 'Income' | 'Expense'; description: string; category: string; amount: number; transaction_date: string; payment_method: 'Cash' | 'Bank' | 'Mobile Money' | 'Card' | 'Other'; reference: string; created_at: string; updated_at: string };
+        Row: { id: string; user_id: string; workspace_id?: string; type: 'Income' | 'Expense'; description: string; category: string; amount: number; transaction_date: string; payment_method: 'Cash' | 'Bank' | 'Mobile Money' | 'Card' | 'Other'; reference: string; created_at: string; updated_at: string };
         Insert: Partial<Database['public']['Tables']['finance_transactions']['Row']> & { user_id: string; description: string; amount: number };
         Update: Partial<Database['public']['Tables']['finance_transactions']['Row']>;
         Relationships: [];
       };
       invoices: {
-        Row: { id: string; user_id: string; invoice_number: string; customer_id: string | null; customer_name: string; description: string; amount: number; issue_date: string; due_date: string; status: 'Draft' | 'Sent' | 'Paid' | 'Overdue' | 'Cancelled'; created_at: string; updated_at: string };
+        Row: { id: string; user_id: string; workspace_id?: string; invoice_number: string; customer_id: string | null; customer_name: string; description: string; amount: number; issue_date: string; due_date: string; status: 'Draft' | 'Sent' | 'Paid' | 'Overdue' | 'Cancelled'; created_at: string; updated_at: string };
         Insert: Partial<Database['public']['Tables']['invoices']['Row']> & { user_id: string; invoice_number: string; customer_name: string; amount: number };
         Update: Partial<Database['public']['Tables']['invoices']['Row']>;
         Relationships: [];
@@ -217,6 +251,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
+          workspace_id?: string;
           endpoint: string;
           p256dh: string;
           auth: string;
@@ -227,6 +262,7 @@ export interface Database {
         };
         Insert: Partial<Database['public']['Tables']['push_subscriptions']['Row']> & {
           user_id: string;
+          workspace_id?: string;
           endpoint: string;
           p256dh: string;
           auth: string;
@@ -235,8 +271,15 @@ export interface Database {
         Relationships: [];
       };
     };
-    Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Views: {
+      workspace_member_directory: {
+        Row: { id: string; workspace_id: string; user_id: string; full_name: string; email: string; role: 'Owner' | 'Admin' | 'Member'; joined_at: string };
+        Relationships: [];
+      };
+    };
+    Functions: {
+      claim_workspace_invitations: { Args: Record<PropertyKey, never>; Returns: number };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

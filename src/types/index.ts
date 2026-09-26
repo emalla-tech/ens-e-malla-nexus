@@ -132,6 +132,10 @@ export interface Invoice {
   createdAt: string;
 }
 
+export type WorkspaceRole = 'Owner' | 'Admin' | 'Member';
+export interface Workspace { id: string; name: string; slug: string; type: 'Personal' | 'Company'; ownerId: string; currency: string; timezone: string; role: WorkspaceRole; }
+export interface WorkspaceMember { id: string; userId: string; fullName: string; email: string; role: WorkspaceRole; joinedAt: string; }
+
 export interface NotificationItem {
   id: string;
   title: string;

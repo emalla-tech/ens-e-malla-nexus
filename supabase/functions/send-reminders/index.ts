@@ -88,16 +88,19 @@ Deno.serve(async (request) => {
     if (isQuietTime(time, preferences)) continue;
 
     const alerts: Alert[] = [];
+    const { data: memberships } = await supabase.from('workspace_members').select('workspace_id').eq('user_id', subscription.user_id).eq('status', 'Active');
+    const workspaceIds = (memberships ?? []).map((membership) => membership.workspace_id);
+    if (!workspaceIds.length) continue;
     if (preferences.tasks !== false) {
-      const { data: tasks } = await supabase.from('tasks').select('id,title,due_date,priority').eq('user_id', subscription.user_id).lte('due_date', date).not('status', 'in', '(Completed,Cancelled)').limit(5);
+      const { data: tasks } = await supabase.from('tasks').select('id,title,due_date,priority').in('workspace_id', workspaceIds).lte('due_date', date).not('status', 'in', '(Completed,Cancelled)').limit(5);
       for (const task of tasks ?? []) alerts.push({ key: `task:${task.id}:${date}`, title: task.due_date < date ? 'Overdue task' : 'Task due today', body: `${task.title} · ${task.priority} priority`, url: '/tasks' });
     }
     if (preferences.followUps !== false) {
-      const { data: followUps } = await supabase.from('follow_ups').select('id,customer,due_date,next_step').eq('user_id', subscription.user_id).lte('due_date', date).neq('status', 'Completed').limit(5);
+      const { data: followUps } = await supabase.from('follow_ups').select('id,customer,due_date,next_step').in('workspace_id', workspaceIds).lte('due_date', date).neq('status', 'Completed').limit(5);
       for (const followUp of followUps ?? []) alerts.push({ key: `follow-up:${followUp.id}:${date}`, title: 'Customer follow-up', body: `${followUp.customer}: ${followUp.next_step}`, url: '/customers' });
     }
     if (preferences.meetings !== false) {
-      const { data: meetings } = await supabase.from('meetings').select('id,title,date,time,location').eq('user_id', subscription.user_id).eq('date', date).gte('time', time).limit(5);
+      const { data: meetings } = await supabase.from('meetings').select('id,title,date,time,location').in('workspace_id', workspaceIds).eq('date', date).gte('time', time).limit(5);
       const currentMinutes = timeToMinutes(time);
       const reminderWindow = preferences.meetingReminderMinutes ?? 30;
       for (const meeting of meetings ?? []) {
@@ -107,7 +110,7 @@ Deno.serve(async (request) => {
       }
     }
     if (preferences.reminders !== false) {
-      const { data: reminders } = await supabase.from('reminders').select('id,title,notes,category,reminder_date,reminder_time').eq('user_id', subscription.user_id).eq('status', 'Active').lte('reminder_date', date).limit(10);
+      const { data: reminders } = await supabase.from('reminders').select('id,title,notes,category,reminder_date,reminder_time').in('workspace_id', workspaceIds).eq('status', 'Active').lte('reminder_date', date).limit(10);
       for (const reminder of reminders ?? []) {
         const reminderTime = String(reminder.reminder_time).slice(0, 5);
         if (reminder.reminder_date === date && reminderTime > time) continue;
@@ -120,7 +123,7 @@ Deno.serve(async (request) => {
       }
     }
     if (preferences.finance !== false) {
-      const { data: invoices } = await supabase.from('invoices').select('id,invoice_number,customer_name,amount,due_date,status').eq('user_id', subscription.user_id).lt('due_date', date).not('status', 'in', '(Paid,Cancelled,Draft)').limit(5);
+      const { data: invoices } = await supabase.from('invoices').select('id,invoice_number,customer_name,amount,due_date,status').in('workspace_id', workspaceIds).lt('due_date', date).not('status', 'in', '(Paid,Cancelled,Draft)').limit(5);
       for (const invoice of invoices ?? []) alerts.push({ key: `invoice:${invoice.id}:${date}`, title: `Invoice overdue: ${invoice.invoice_number}`, body: `${invoice.customer_name} owes RWF ${Number(invoice.amount).toLocaleString()}`, url: '/finance' });
     }
 

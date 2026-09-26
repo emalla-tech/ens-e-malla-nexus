@@ -1,8 +1,9 @@
-import { Bell, Download, Menu, Plus, Search } from 'lucide-react';
+import { Bell, Building2, ChevronDown, Download, Menu, Plus, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from './Button';
 import { Logo } from './Logo';
+import { useWorkspace } from '../hooks/useWorkspace';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -13,6 +14,7 @@ interface HeaderProps {
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
+  const { workspaces, activeWorkspace, switchWorkspace } = useWorkspace();
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
@@ -47,6 +49,7 @@ export function Header({ onMenuClick }: HeaderProps) {
             <Menu size={21} />
           </Link>
           <Logo dark />
+          {activeWorkspace ? <label className="relative hidden items-center md:flex"><Building2 size={16} className="pointer-events-none absolute left-3 text-brand-orange" /><select aria-label="Active workspace" value={activeWorkspace.id} onChange={(event) => switchWorkspace(event.target.value)} className="min-h-10 max-w-52 appearance-none rounded-md border border-gray-200 bg-white py-2 pl-9 pr-8 text-sm font-bold outline-none focus:border-brand-orange">{workspaces.map((workspace) => <option key={workspace.id} value={workspace.id}>{workspace.name}</option>)}</select><ChevronDown size={14} className="pointer-events-none absolute right-3 text-gray-400" /></label> : null}
         </div>
 
         <div className="hidden min-h-10 w-full max-w-sm items-center gap-2 rounded-md bg-white px-3 text-gray-500 shadow-sm md:flex">

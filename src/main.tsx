@@ -4,14 +4,13 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
 import { AuthProvider } from './hooks/useAuth';
+import { WorkspaceProvider } from './hooks/useWorkspace';
 import { registerServiceWorker } from './utils/registerServiceWorker';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <AuthProvider>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      <WorkspaceProvider><BrowserRouter><App /></BrowserRouter></WorkspaceProvider>
     </AuthProvider>
   </React.StrictMode>,
 );

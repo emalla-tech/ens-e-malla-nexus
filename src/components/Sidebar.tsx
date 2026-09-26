@@ -11,6 +11,7 @@ import {
   NotebookText,
   Settings,
   Users,
+  UserRoundCog,
   X,
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
@@ -24,6 +25,7 @@ const navItems = [
   { label: 'Customers', href: '/customers', icon: Users },
   { label: 'Finance', href: '/finance', icon: Landmark },
   { label: 'Reports', href: '/reports', icon: ChartNoAxesCombined },
+  { label: 'Team', href: '/team', icon: UserRoundCog },
   { label: 'Calendar', href: '/calendar', icon: CalendarDays },
   { label: 'Reminders', href: '/reminders', icon: AlarmClock },
   { label: 'Notes', href: '/notes', icon: NotebookText },

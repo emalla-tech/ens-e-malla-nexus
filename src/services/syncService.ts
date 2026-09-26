@@ -1,6 +1,7 @@
 import type { Customer, FinanceTransaction, FollowUp, Goal, Invoice, Meeting, Project, QuickNote, Reminder, Task } from '../types';
 import { getCurrentUserId } from './authService';
 import { supabase } from './supabase';
+import { requireActiveWorkspaceId } from './workspaceService';
 
 function requireSupabase() {
   if (!supabase) {
@@ -19,14 +20,19 @@ async function requireUserId() {
   return userId;
 }
 
+async function requireSyncContext() {
+  const [userId, workspaceId] = await Promise.all([requireUserId(), requireActiveWorkspaceId()]);
+  return { userId, workspaceId };
+}
+
 export async function loadCloudTasks(): Promise<Task[]> {
   const client = requireSupabase();
-  const userId = await requireUserId();
+  const { userId, workspaceId } = await requireSyncContext(); void userId;
 
   const { data, error } = await client
     .from('tasks')
     .select('*')
-    .eq('user_id', userId)
+    .eq('workspace_id', workspaceId)
     .order('due_date', { ascending: true })
     .order('created_at', { ascending: false });
 
@@ -50,11 +56,11 @@ export async function loadCloudTasks(): Promise<Task[]> {
 
 export async function saveCloudTask(task: Task) {
   const client = requireSupabase();
-  const userId = await requireUserId();
+  const { userId, workspaceId } = await requireSyncContext(); void userId;
 
   const { error } = await client.from('tasks').upsert({
     id: task.id,
-    user_id: userId,
+    user_id: userId, workspace_id: workspaceId,
     title: task.title,
     description: task.description,
     priority: task.priority,
@@ -72,9 +78,9 @@ export async function saveCloudTask(task: Task) {
 
 export async function deleteCloudTask(taskId: string) {
   const client = requireSupabase();
-  const userId = await requireUserId();
+  const { userId, workspaceId } = await requireSyncContext(); void userId;
 
-  const { error } = await client.from('tasks').delete().eq('id', taskId).eq('user_id', userId);
+  const { error } = await client.from('tasks').delete().eq('id', taskId).eq('workspace_id', workspaceId);
   if (error) {
     throw error;
   }
@@ -82,12 +88,12 @@ export async function deleteCloudTask(taskId: string) {
 
 export async function loadCloudProjects(): Promise<Project[]> {
   const client = requireSupabase();
-  const userId = await requireUserId();
+  const { userId, workspaceId } = await requireSyncContext(); void userId;
 
   const { data, error } = await client
     .from('projects')
     .select('*')
-    .eq('user_id', userId)
+    .eq('workspace_id', workspaceId)
     .order('due_date', { ascending: true })
     .order('created_at', { ascending: false });
 
@@ -111,11 +117,11 @@ export async function loadCloudProjects(): Promise<Project[]> {
 
 export async function saveCloudProject(project: Project) {
   const client = requireSupabase();
-  const userId = await requireUserId();
+  const { userId, workspaceId } = await requireSyncContext(); void userId;
 
   const { error } = await client.from('projects').upsert({
     id: project.id,
-    user_id: userId,
+    user_id: userId, workspace_id: workspaceId,
     name: project.name,
     description: project.description,
     status: project.status,
@@ -134,9 +140,9 @@ export async function saveCloudProject(project: Project) {
 
 export async function deleteCloudProject(projectId: string) {
   const client = requireSupabase();
-  const userId = await requireUserId();
+  const { userId, workspaceId } = await requireSyncContext(); void userId;
 
-  const { error } = await client.from('projects').delete().eq('id', projectId).eq('user_id', userId);
+  const { error } = await client.from('projects').delete().eq('id', projectId).eq('workspace_id', workspaceId);
   if (error) {
     throw error;
   }
@@ -144,12 +150,12 @@ export async function deleteCloudProject(projectId: string) {
 
 export async function loadCloudCustomers(): Promise<Customer[]> {
   const client = requireSupabase();
-  const userId = await requireUserId();
+  const { userId, workspaceId } = await requireSyncContext(); void userId;
 
   const { data, error } = await client
     .from('customers')
     .select('*')
-    .eq('user_id', userId)
+    .eq('workspace_id', workspaceId)
     .order('next_follow_up', { ascending: true })
     .order('created_at', { ascending: false });
 
@@ -175,11 +181,11 @@ export async function loadCloudCustomers(): Promise<Customer[]> {
 
 export async function saveCloudCustomer(customer: Customer) {
   const client = requireSupabase();
-  const userId = await requireUserId();
+  const { userId, workspaceId } = await requireSyncContext(); void userId;
 
   const { error } = await client.from('customers').upsert({
     id: customer.id,
-    user_id: userId,
+    user_id: userId, workspace_id: workspaceId,
     name: customer.name,
     company: customer.company,
     email: customer.email,
@@ -200,9 +206,9 @@ export async function saveCloudCustomer(customer: Customer) {
 
 export async function deleteCloudCustomer(customerId: string) {
   const client = requireSupabase();
-  const userId = await requireUserId();
+  const { userId, workspaceId } = await requireSyncContext(); void userId;
 
-  const { error } = await client.from('customers').delete().eq('id', customerId).eq('user_id', userId);
+  const { error } = await client.from('customers').delete().eq('id', customerId).eq('workspace_id', workspaceId);
   if (error) {
     throw error;
   }
@@ -210,12 +216,12 @@ export async function deleteCloudCustomer(customerId: string) {
 
 export async function loadCloudFollowUps(): Promise<FollowUp[]> {
   const client = requireSupabase();
-  const userId = await requireUserId();
+  const { userId, workspaceId } = await requireSyncContext(); void userId;
 
   const { data, error } = await client
     .from('follow_ups')
     .select('*')
-    .eq('user_id', userId)
+    .eq('workspace_id', workspaceId)
     .order('due_date', { ascending: true })
     .order('created_at', { ascending: false });
 
@@ -239,11 +245,11 @@ export async function loadCloudFollowUps(): Promise<FollowUp[]> {
 
 export async function saveCloudFollowUp(followUp: FollowUp) {
   const client = requireSupabase();
-  const userId = await requireUserId();
+  const { userId, workspaceId } = await requireSyncContext(); void userId;
 
   const { error } = await client.from('follow_ups').upsert({
     id: followUp.id,
-    user_id: userId,
+    user_id: userId, workspace_id: workspaceId,
     customer_id: followUp.customerId,
     customer: followUp.customer,
     note: followUp.note,
@@ -262,12 +268,12 @@ export async function saveCloudFollowUp(followUp: FollowUp) {
 
 export async function loadCloudNotes(): Promise<QuickNote[]> {
   const client = requireSupabase();
-  const userId = await requireUserId();
+  const { userId, workspaceId } = await requireSyncContext(); void userId;
 
   const { data, error } = await client
     .from('notes')
     .select('*')
-    .eq('user_id', userId)
+    .eq('workspace_id', workspaceId)
     .order('updated_at', { ascending: false });
 
   if (error) {
@@ -289,11 +295,11 @@ export async function loadCloudNotes(): Promise<QuickNote[]> {
 
 export async function saveCloudNote(note: QuickNote) {
   const client = requireSupabase();
-  const userId = await requireUserId();
+  const { userId, workspaceId } = await requireSyncContext(); void userId;
 
   const { error } = await client.from('notes').upsert({
     id: note.id,
-    user_id: userId,
+    user_id: userId, workspace_id: workspaceId,
     title: note.title,
     body: note.body,
     folder: note.folder,
@@ -311,9 +317,9 @@ export async function saveCloudNote(note: QuickNote) {
 
 export async function deleteCloudNote(noteId: string) {
   const client = requireSupabase();
-  const userId = await requireUserId();
+  const { userId, workspaceId } = await requireSyncContext(); void userId;
 
-  const { error } = await client.from('notes').delete().eq('id', noteId).eq('user_id', userId);
+  const { error } = await client.from('notes').delete().eq('id', noteId).eq('workspace_id', workspaceId);
   if (error) {
     throw error;
   }
@@ -321,12 +327,12 @@ export async function deleteCloudNote(noteId: string) {
 
 export async function loadCloudMeetings(): Promise<Meeting[]> {
   const client = requireSupabase();
-  const userId = await requireUserId();
+  const { userId, workspaceId } = await requireSyncContext(); void userId;
 
   const { data, error } = await client
     .from('meetings')
     .select('*')
-    .eq('user_id', userId)
+    .eq('workspace_id', workspaceId)
     .order('date', { ascending: true })
     .order('time', { ascending: true })
     .order('created_at', { ascending: false });
@@ -347,11 +353,11 @@ export async function loadCloudMeetings(): Promise<Meeting[]> {
 
 export async function saveCloudMeeting(meeting: Meeting) {
   const client = requireSupabase();
-  const userId = await requireUserId();
+  const { userId, workspaceId } = await requireSyncContext(); void userId;
 
   const { error } = await client.from('meetings').upsert({
     id: meeting.id,
-    user_id: userId,
+    user_id: userId, workspace_id: workspaceId,
     title: meeting.title,
     date: meeting.date,
     time: meeting.time,
@@ -366,9 +372,9 @@ export async function saveCloudMeeting(meeting: Meeting) {
 
 export async function deleteCloudMeeting(meetingId: string) {
   const client = requireSupabase();
-  const userId = await requireUserId();
+  const { userId, workspaceId } = await requireSyncContext(); void userId;
 
-  const { error } = await client.from('meetings').delete().eq('id', meetingId).eq('user_id', userId);
+  const { error } = await client.from('meetings').delete().eq('id', meetingId).eq('workspace_id', workspaceId);
   if (error) {
     throw error;
   }
@@ -376,12 +382,12 @@ export async function deleteCloudMeeting(meetingId: string) {
 
 export async function loadCloudGoals(): Promise<Goal[]> {
   const client = requireSupabase();
-  const userId = await requireUserId();
+  const { userId, workspaceId } = await requireSyncContext(); void userId;
 
   const { data, error } = await client
     .from('goals')
     .select('*')
-    .eq('user_id', userId)
+    .eq('workspace_id', workspaceId)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -399,11 +405,11 @@ export async function loadCloudGoals(): Promise<Goal[]> {
 
 export async function saveCloudGoal(goal: Goal) {
   const client = requireSupabase();
-  const userId = await requireUserId();
+  const { userId, workspaceId } = await requireSyncContext(); void userId;
 
   const { error } = await client.from('goals').upsert({
     id: goal.id,
-    user_id: userId,
+    user_id: userId, workspace_id: workspaceId,
     title: goal.title,
     progress: goal.progress,
     owner: goal.owner,
@@ -417,9 +423,9 @@ export async function saveCloudGoal(goal: Goal) {
 
 export async function deleteCloudGoal(goalId: string) {
   const client = requireSupabase();
-  const userId = await requireUserId();
+  const { userId, workspaceId } = await requireSyncContext(); void userId;
 
-  const { error } = await client.from('goals').delete().eq('id', goalId).eq('user_id', userId);
+  const { error } = await client.from('goals').delete().eq('id', goalId).eq('workspace_id', workspaceId);
   if (error) {
     throw error;
   }
@@ -427,8 +433,8 @@ export async function deleteCloudGoal(goalId: string) {
 
 export async function loadCloudReminders(): Promise<Reminder[]> {
   const client = requireSupabase();
-  const userId = await requireUserId();
-  const { data, error } = await client.from('reminders').select('*').eq('user_id', userId).order('reminder_date').order('reminder_time');
+  const { userId, workspaceId } = await requireSyncContext(); void userId;
+  const { data, error } = await client.from('reminders').select('*').eq('workspace_id', workspaceId).order('reminder_date').order('reminder_time');
   if (error) throw error;
   return (data ?? []).map((reminder) => ({
     id: reminder.id,
@@ -446,9 +452,9 @@ export async function loadCloudReminders(): Promise<Reminder[]> {
 
 export async function saveCloudReminder(reminder: Reminder) {
   const client = requireSupabase();
-  const userId = await requireUserId();
+  const { userId, workspaceId } = await requireSyncContext(); void userId;
   const { error } = await client.from('reminders').upsert({
-    id: reminder.id, user_id: userId, title: reminder.title, notes: reminder.notes,
+    id: reminder.id, user_id: userId, workspace_id: workspaceId, title: reminder.title, notes: reminder.notes,
     category: reminder.category, priority: reminder.priority, reminder_date: reminder.date,
     reminder_time: reminder.time, repeat_interval: reminder.repeat, status: reminder.status,
   });
@@ -457,43 +463,43 @@ export async function saveCloudReminder(reminder: Reminder) {
 
 export async function deleteCloudReminder(reminderId: string) {
   const client = requireSupabase();
-  const userId = await requireUserId();
-  const { error } = await client.from('reminders').delete().eq('id', reminderId).eq('user_id', userId);
+  const { userId, workspaceId } = await requireSyncContext(); void userId;
+  const { error } = await client.from('reminders').delete().eq('id', reminderId).eq('workspace_id', workspaceId);
   if (error) throw error;
 }
 
 export async function loadCloudTransactions(): Promise<FinanceTransaction[]> {
-  const client = requireSupabase(); const userId = await requireUserId();
-  const { data, error } = await client.from('finance_transactions').select('*').eq('user_id', userId).order('transaction_date', { ascending: false }).order('created_at', { ascending: false });
+  const client = requireSupabase(); const { userId, workspaceId } = await requireSyncContext(); void userId;
+  const { data, error } = await client.from('finance_transactions').select('*').eq('workspace_id', workspaceId).order('transaction_date', { ascending: false }).order('created_at', { ascending: false });
   if (error) throw error;
   return (data ?? []).map((item) => ({ id: item.id, type: item.type, description: item.description, category: item.category, amount: Number(item.amount), date: item.transaction_date, paymentMethod: item.payment_method, reference: item.reference, createdAt: item.created_at }));
 }
 
 export async function saveCloudTransaction(item: FinanceTransaction) {
-  const client = requireSupabase(); const userId = await requireUserId();
-  const { error } = await client.from('finance_transactions').upsert({ id: item.id, user_id: userId, type: item.type, description: item.description, category: item.category, amount: item.amount, transaction_date: item.date, payment_method: item.paymentMethod, reference: item.reference });
+  const client = requireSupabase(); const { userId, workspaceId } = await requireSyncContext(); void userId;
+  const { error } = await client.from('finance_transactions').upsert({ id: item.id, user_id: userId, workspace_id: workspaceId, type: item.type, description: item.description, category: item.category, amount: item.amount, transaction_date: item.date, payment_method: item.paymentMethod, reference: item.reference });
   if (error) throw error;
 }
 
 export async function deleteCloudTransaction(id: string) {
-  const client = requireSupabase(); const userId = await requireUserId();
-  const { error } = await client.from('finance_transactions').delete().eq('id', id).eq('user_id', userId); if (error) throw error;
+  const client = requireSupabase(); const { userId, workspaceId } = await requireSyncContext(); void userId;
+  const { error } = await client.from('finance_transactions').delete().eq('id', id).eq('workspace_id', workspaceId); if (error) throw error;
 }
 
 export async function loadCloudInvoices(): Promise<Invoice[]> {
-  const client = requireSupabase(); const userId = await requireUserId();
-  const { data, error } = await client.from('invoices').select('*').eq('user_id', userId).order('due_date').order('created_at', { ascending: false });
+  const client = requireSupabase(); const { userId, workspaceId } = await requireSyncContext(); void userId;
+  const { data, error } = await client.from('invoices').select('*').eq('workspace_id', workspaceId).order('due_date').order('created_at', { ascending: false });
   if (error) throw error;
   return (data ?? []).map((item) => ({ id: item.id, invoiceNumber: item.invoice_number, customerId: item.customer_id ?? '', customerName: item.customer_name, description: item.description, amount: Number(item.amount), issueDate: item.issue_date, dueDate: item.due_date, status: item.status, createdAt: item.created_at }));
 }
 
 export async function saveCloudInvoice(item: Invoice) {
-  const client = requireSupabase(); const userId = await requireUserId();
-  const { error } = await client.from('invoices').upsert({ id: item.id, user_id: userId, invoice_number: item.invoiceNumber, customer_id: item.customerId || null, customer_name: item.customerName, description: item.description, amount: item.amount, issue_date: item.issueDate, due_date: item.dueDate, status: item.status });
+  const client = requireSupabase(); const { userId, workspaceId } = await requireSyncContext(); void userId;
+  const { error } = await client.from('invoices').upsert({ id: item.id, user_id: userId, workspace_id: workspaceId, invoice_number: item.invoiceNumber, customer_id: item.customerId || null, customer_name: item.customerName, description: item.description, amount: item.amount, issue_date: item.issueDate, due_date: item.dueDate, status: item.status });
   if (error) throw error;
 }
 
 export async function deleteCloudInvoice(id: string) {
-  const client = requireSupabase(); const userId = await requireUserId();
-  const { error } = await client.from('invoices').delete().eq('id', id).eq('user_id', userId); if (error) throw error;
+  const client = requireSupabase(); const { userId, workspaceId } = await requireSyncContext(); void userId;
+  const { error } = await client.from('invoices').delete().eq('id', id).eq('workspace_id', workspaceId); if (error) throw error;
 }
