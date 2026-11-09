@@ -1,0 +1,18 @@
+{
+  "view": {
+    "Owner": ["Dashboard", "Tasks", "Projects", "Customers", "Calendar", "Reminders", "Notes", "Goals", "Finance", "Reports", "Notifications", "Team", "Settings"],
+    "Admin": ["Dashboard", "Tasks", "Projects", "Customers", "Calendar", "Reminders", "Notes", "Goals", "Finance", "Reports", "Notifications", "Team", "Settings"],
+    "Manager": ["Dashboard", "Tasks", "Projects", "Customers", "Calendar", "Reminders", "Notes", "Goals", "Reports", "Notifications", "Team"],
+    "Finance": ["Dashboard", "Finance", "Reports", "Notifications", "Team"],
+    "Member": ["Dashboard", "Tasks", "Projects", "Customers", "Calendar", "Reminders", "Notes", "Goals", "Notifications", "Team"],
+    "Viewer": ["Dashboard", "Tasks", "Projects", "Customers", "Calendar", "Reminders", "Notes", "Goals", "Reports", "Notifications", "Team"]
+  },
+  "manage": {
+    "Owner": ["Dashboard", "Tasks", "Projects", "Customers", "Calendar", "Reminders", "Notes", "Goals", "Finance", "Reports", "Notifications", "Team", "Settings"],
+    "Admin": ["Dashboard", "Tasks", "Projects", "Customers", "Calendar", "Reminders", "Notes", "Goals", "Finance", "Reports", "Notifications", "Team"],
+    "Manager": ["Tasks", "Projects", "Customers", "Calendar", "Reminders", "Notes", "Goals"],
+    "Finance": ["Finance"],
+    "Member": ["Tasks", "Projects", "Customers", "Calendar", "Reminders", "Notes", "Goals"],
+    "Viewer": []
+  }
+}
