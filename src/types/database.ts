@@ -32,13 +32,13 @@ export interface Database {
         Relationships: [];
       };
       workspace_members: {
-        Row: { id: string; workspace_id: string; user_id: string; role: 'Owner' | 'Admin' | 'Member'; status: 'Active' | 'Suspended'; joined_at: string };
+        Row: { id: string; workspace_id: string; user_id: string; role: 'Owner' | 'Admin' | 'Manager' | 'Finance' | 'Member' | 'Viewer'; status: 'Active' | 'Suspended'; joined_at: string };
         Insert: Partial<Database['public']['Tables']['workspace_members']['Row']> & { workspace_id: string; user_id: string };
         Update: Partial<Database['public']['Tables']['workspace_members']['Row']>;
         Relationships: [];
       };
       workspace_invitations: {
-        Row: { id: string; workspace_id: string; email: string; role: 'Admin' | 'Member'; status: 'Pending' | 'Accepted' | 'Revoked'; invited_by: string; created_at: string; expires_at: string };
+        Row: { id: string; workspace_id: string; email: string; role: 'Admin' | 'Manager' | 'Finance' | 'Member' | 'Viewer'; status: 'Pending' | 'Accepted' | 'Revoked'; invited_by: string; created_at: string; expires_at: string };
         Insert: Partial<Database['public']['Tables']['workspace_invitations']['Row']> & { workspace_id: string; email: string; invited_by: string };
         Update: Partial<Database['public']['Tables']['workspace_invitations']['Row']>;
         Relationships: [];
@@ -273,7 +273,7 @@ export interface Database {
     };
     Views: {
       workspace_member_directory: {
-        Row: { id: string; workspace_id: string; user_id: string; full_name: string; email: string; role: 'Owner' | 'Admin' | 'Member'; joined_at: string };
+        Row: { id: string; workspace_id: string; user_id: string; full_name: string; email: string; role: 'Owner' | 'Admin' | 'Manager' | 'Finance' | 'Member' | 'Viewer'; joined_at: string };
         Relationships: [];
       };
     };

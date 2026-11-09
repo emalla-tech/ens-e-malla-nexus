@@ -3,6 +3,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Sidebar } from '../components/Sidebar';
 import { useWorkspace } from '../hooks/useWorkspace';
+import { canViewModule, pathModule } from '../utils/permissions';
 
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -11,6 +12,10 @@ export function AppLayout() {
 
   if (!loading && activeWorkspace && !activeWorkspace.onboardingComplete && location.pathname !== '/onboarding') {
     return <Navigate to="/onboarding" replace />;
+  }
+  const routeModule = pathModule[location.pathname.split('/')[1]];
+  if (!loading && activeWorkspace && routeModule && !canViewModule(activeWorkspace.role, routeModule)) {
+    return <Navigate to="/" replace />;
   }
 
   return (

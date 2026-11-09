@@ -18,6 +18,7 @@ import { NavLink } from 'react-router-dom';
 import { Logo } from './Logo';
 import { cn } from '../utils/cn';
 import { useWorkspace } from '../hooks/useWorkspace';
+import { canViewModule, type WorkspaceModule } from '../utils/permissions';
 
 const navItems = [
   { label: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -42,7 +43,7 @@ interface SidebarProps {
 
 export function Sidebar({ open, onClose }: SidebarProps) {
   const { activeWorkspace } = useWorkspace();
-  const visibleItems = navItems.filter((item) => ['Dashboard', 'Notifications', 'Team', 'Settings'].includes(item.label) || !activeWorkspace?.enabledModules.length || activeWorkspace.enabledModules.includes(item.label));
+  const visibleItems = navItems.filter((item) => canViewModule(activeWorkspace?.role, item.label as WorkspaceModule) && (['Dashboard', 'Notifications', 'Team', 'Settings'].includes(item.label) || !activeWorkspace?.enabledModules.length || activeWorkspace.enabledModules.includes(item.label)));
   return (
     <>
       <aside
