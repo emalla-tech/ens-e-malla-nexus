@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const matrix = JSON.parse(readFileSync(new URL('../src/data/permissionMatrix.json', import.meta.url), 'utf8'));
+const planCatalogSource = readFileSync(new URL('../src/data/planCatalog.ts', import.meta.url), 'utf8');
 const roles = ['Owner', 'Admin', 'Manager', 'Finance', 'Member', 'Viewer'];
-const modules = ['Dashboard', 'Tasks', 'Projects', 'Customers', 'Calendar', 'Reminders', 'Notes', 'Goals', 'Finance', 'Reports', 'Notifications', 'Team', 'Settings'];
+const modules = ['Dashboard', 'Tasks', 'Projects', 'Customers', 'Calendar', 'Reminders', 'Notes', 'Goals', 'Finance', 'Reports', 'Notifications', 'Team', 'Settings', 'Billing'];
 
 test('every supported role has complete view and manage lists', () => {
   for (const role of roles) {
@@ -31,4 +32,21 @@ test('only owner and admin can manage team', () => {
   assert.ok(matrix.manage.Owner.includes('Team'));
   assert.ok(matrix.manage.Admin.includes('Team'));
   for (const role of ['Manager', 'Finance', 'Member', 'Viewer']) assert.ok(!matrix.manage[role].includes('Team'));
+});
+
+test('billing is restricted to the workspace owner', () => {
+  assert.ok(matrix.view.Owner.includes('Billing'));
+  assert.ok(matrix.manage.Owner.includes('Billing'));
+  for (const role of ['Admin', 'Manager', 'Finance', 'Member', 'Viewer']) assert.ok(!matrix.view[role].includes('Billing'));
+});
+
+test('plan catalog keeps advanced modules out of Personal', () => {
+  const personal = planCatalogSource.slice(planCatalogSource.indexOf("code: 'Personal'"), planCatalogSource.indexOf("code: 'Business'"));
+  for (const module of ['Projects', 'Customers', 'Finance', 'Reports']) assert.ok(!personal.includes(`'${module}'`));
+});
+
+test('plan capacity increases from Personal to Professional', () => {
+  const limits = [...planCatalogSource.matchAll(/maxMembers: (\d+), maxCustomers: (\d+), maxProjects: (\d+)/g)].map((match) => match.slice(1).map(Number));
+  assert.equal(limits.length, 3);
+  for (let index = 1; index < limits.length; index += 1) for (let field = 0; field < 3; field += 1) assert.ok(limits[index][field] > limits[index - 1][field]);
 });

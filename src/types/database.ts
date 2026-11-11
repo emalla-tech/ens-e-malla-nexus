@@ -43,6 +43,24 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['workspace_invitations']['Row']>;
         Relationships: [];
       };
+      plan_definitions: {
+        Row: { code: 'Personal' | 'Business' | 'Professional'; name: string; description: string; modules: string[]; max_members: number; max_customers: number; max_projects: number; storage_mb: number; active: boolean; created_at: string; updated_at: string };
+        Insert: Partial<Database['public']['Tables']['plan_definitions']['Row']> & { code: 'Personal' | 'Business' | 'Professional'; name: string };
+        Update: Partial<Database['public']['Tables']['plan_definitions']['Row']>;
+        Relationships: [];
+      };
+      workspace_subscriptions: {
+        Row: { id: string; workspace_id: string; plan_code: 'Personal' | 'Business' | 'Professional'; status: 'Trialing' | 'Active' | 'Past Due' | 'Cancelled' | 'Expired'; trial_ends_at: string; current_period_start: string; current_period_end: string; cancel_at_period_end: boolean; provider: string | null; provider_customer_id: string | null; provider_subscription_id: string | null; created_at: string; updated_at: string };
+        Insert: Partial<Database['public']['Tables']['workspace_subscriptions']['Row']> & { workspace_id: string; plan_code: 'Personal' | 'Business' | 'Professional' };
+        Update: Partial<Database['public']['Tables']['workspace_subscriptions']['Row']>;
+        Relationships: [];
+      };
+      subscription_change_requests: {
+        Row: { id: string; workspace_id: string; requested_plan: 'Personal' | 'Business' | 'Professional'; requested_by: string; status: 'Pending' | 'Approved' | 'Rejected'; created_at: string; resolved_at: string | null };
+        Insert: Partial<Database['public']['Tables']['subscription_change_requests']['Row']> & { workspace_id: string; requested_plan: 'Personal' | 'Business' | 'Professional'; requested_by: string };
+        Update: Partial<Database['public']['Tables']['subscription_change_requests']['Row']>;
+        Relationships: [];
+      };
       projects: {
         Row: {
           id: string;
@@ -280,6 +298,7 @@ export interface Database {
     Functions: {
       claim_workspace_invitations: { Args: Record<PropertyKey, never>; Returns: number };
       create_workspace: { Args: { workspace_name: string; workspace_type: string; workspace_country: string; workspace_currency: string; workspace_timezone: string; workspace_industry: string; workspace_modules: string[]; workspace_plan: string }; Returns: string };
+      workspace_usage_summary: { Args: { target_workspace: string }; Returns: Json };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

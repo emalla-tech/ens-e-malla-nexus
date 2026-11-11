@@ -4,6 +4,7 @@ import { Header } from '../components/Header';
 import { Sidebar } from '../components/Sidebar';
 import { useWorkspace } from '../hooks/useWorkspace';
 import { canViewModule, pathModule } from '../utils/permissions';
+import { planIncludesModule } from '../data/planCatalog';
 
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -16,6 +17,10 @@ export function AppLayout() {
   const routeModule = pathModule[location.pathname.split('/')[1]];
   if (!loading && activeWorkspace && routeModule && !canViewModule(activeWorkspace.role, routeModule)) {
     return <Navigate to="/" replace />;
+  }
+  const planIndependentModules = ['Dashboard', 'Notifications', 'Team', 'Settings', 'Billing'];
+  if (!loading && activeWorkspace && routeModule && !planIndependentModules.includes(routeModule) && !planIncludesModule(activeWorkspace.plan, routeModule)) {
+    return <Navigate to="/billing" replace />;
   }
 
   return (

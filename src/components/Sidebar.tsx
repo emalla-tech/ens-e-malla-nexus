@@ -3,6 +3,7 @@ import {
   AlarmClock,
   CalendarDays,
   ClipboardCheck,
+  CreditCard,
   Flag,
   FolderKanban,
   Landmark,
@@ -19,6 +20,7 @@ import { Logo } from './Logo';
 import { cn } from '../utils/cn';
 import { useWorkspace } from '../hooks/useWorkspace';
 import { canViewModule, type WorkspaceModule } from '../utils/permissions';
+import { planIncludesModule } from '../data/planCatalog';
 
 const navItems = [
   { label: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -28,6 +30,7 @@ const navItems = [
   { label: 'Finance', href: '/finance', icon: Landmark },
   { label: 'Reports', href: '/reports', icon: ChartNoAxesCombined },
   { label: 'Team', href: '/team', icon: UserRoundCog },
+  { label: 'Billing', href: '/billing', icon: CreditCard },
   { label: 'Calendar', href: '/calendar', icon: CalendarDays },
   { label: 'Reminders', href: '/reminders', icon: AlarmClock },
   { label: 'Notes', href: '/notes', icon: NotebookText },
@@ -43,7 +46,7 @@ interface SidebarProps {
 
 export function Sidebar({ open, onClose }: SidebarProps) {
   const { activeWorkspace } = useWorkspace();
-  const visibleItems = navItems.filter((item) => canViewModule(activeWorkspace?.role, item.label as WorkspaceModule) && (['Dashboard', 'Notifications', 'Team', 'Settings'].includes(item.label) || !activeWorkspace?.enabledModules.length || activeWorkspace.enabledModules.includes(item.label)));
+  const visibleItems = navItems.filter((item) => canViewModule(activeWorkspace?.role, item.label as WorkspaceModule) && (['Dashboard', 'Notifications', 'Team', 'Settings', 'Billing'].includes(item.label) || ((!activeWorkspace?.enabledModules.length || activeWorkspace.enabledModules.includes(item.label)) && planIncludesModule(activeWorkspace?.plan, item.label))));
   return (
     <>
       <aside

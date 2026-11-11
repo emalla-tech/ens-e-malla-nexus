@@ -133,8 +133,13 @@ export interface Invoice {
 }
 
 export type WorkspaceRole = 'Owner' | 'Admin' | 'Manager' | 'Finance' | 'Member' | 'Viewer';
+export type PlanCode = 'Personal' | 'Business' | 'Professional';
+export type SubscriptionStatus = 'Trialing' | 'Active' | 'Past Due' | 'Cancelled' | 'Expired';
 export interface Workspace { id: string; name: string; slug: string; type: 'Personal' | 'Company'; ownerId: string; currency: string; timezone: string; country: string; industry: string; enabledModules: string[]; plan: 'Personal' | 'Business' | 'Professional'; onboardingComplete: boolean; trialEndsAt: string; role: WorkspaceRole; }
 export interface WorkspaceMember { id: string; userId: string; fullName: string; email: string; role: WorkspaceRole; joinedAt: string; }
+export interface PlanDefinition { code: PlanCode; name: string; description: string; modules: string[]; maxMembers: number; maxCustomers: number; maxProjects: number; storageMb: number; }
+export interface WorkspaceSubscription { id: string; workspaceId: string; planCode: PlanCode; status: SubscriptionStatus; trialEndsAt: string; currentPeriodEnd: string; cancelAtPeriodEnd: boolean; }
+export interface WorkspaceUsage { members: number; customers: number; projects: number; storageMb: number; }
 
 export interface NotificationItem {
   id: string;
