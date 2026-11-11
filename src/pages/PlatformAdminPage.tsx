@@ -5,7 +5,7 @@ import { loadPlatformWorkspaces, type PlatformWorkspaceSummary } from '../servic
 
 export function PlatformAdminPage() {
   const [items, setItems] = useState<PlatformWorkspaceSummary[]>([]); const [query, setQuery] = useState(''); const [status, setStatus] = useState('All'); const [loading, setLoading] = useState(false); const [error, setError] = useState('');
-  function load() { setLoading(true); setError(''); void loadPlatformWorkspaces().then(setItems).catch((reason) => setError(reason instanceof Error ? reason.message : 'Platform accounts could not be loaded.')).finally(() => setLoading(false)); }
+  function load() { setLoading(true); setError(''); void loadPlatformWorkspaces().then(setItems).catch((reason: unknown) => { const message = typeof reason === 'object' && reason && 'message' in reason ? String(reason.message) : 'Platform accounts could not be loaded.'; setError(message); }).finally(() => setLoading(false)); }
   useEffect(load, []);
   const filtered = useMemo(() => items.filter((item) => (status === 'All' || item.subscriptionStatus === status) && `${item.name} ${item.ownerName} ${item.ownerEmail}`.toLowerCase().includes(query.toLowerCase())), [items, query, status]);
   const trials = items.filter((item) => item.subscriptionStatus === 'Trialing').length;

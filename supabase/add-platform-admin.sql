@@ -95,17 +95,17 @@ begin
   return query
   select
     workspace.id,
-    workspace.name,
-    workspace.type,
-    workspace.country,
-    workspace.industry,
-    coalesce(subscription.plan_code, workspace.plan),
-    coalesce(subscription.status, 'Active'),
+    workspace.name::text,
+    workspace.type::text,
+    workspace.country::text,
+    workspace.industry::text,
+    coalesce(subscription.plan_code, workspace.plan)::text,
+    coalesce(subscription.status, 'Active')::text,
     coalesce(subscription.trial_ends_at, workspace.trial_ends_at),
     coalesce(subscription.current_period_end, workspace.trial_ends_at),
     (select count(*) from public.workspace_members member where member.workspace_id = workspace.id and member.status = 'Active'),
-    coalesce(profile.full_name, 'Workspace owner'),
-    coalesce(owner.email, ''),
+    coalesce(profile.full_name, 'Workspace owner')::text,
+    coalesce(owner.email, '')::text,
     workspace.created_at
   from public.workspaces workspace
   join auth.users owner on owner.id = workspace.owner_id
