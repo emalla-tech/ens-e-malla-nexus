@@ -21,6 +21,7 @@ import { useNotes } from '../hooks/useNotes';
 import { usePersistentState } from '../hooks/usePersistentState';
 import { useProjects } from '../hooks/useProjects';
 import { useTasks } from '../hooks/useTasks';
+import { useProfile } from '../hooks/useProfile';
 import { loadCloudFollowUps } from '../services/syncService';
 import type { FollowUp, Task } from '../types';
 import { getLiveFollowUps } from '../utils/crm';
@@ -50,6 +51,7 @@ function getTimeGreeting(date = new Date()) {
 
 export function DashboardPage() {
   const { cloudReady, user } = useAuth();
+  const { profile } = useProfile();
   const { tasks } = useTasks();
   const { projects } = useProjects();
   const { customers } = useCustomers();
@@ -131,7 +133,7 @@ export function DashboardPage() {
         <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.18em] text-brand-orange">{formatLongDate()}</p>
-            <h1 className="mt-3 text-3xl font-black tracking-normal sm:text-4xl">{greeting}, John</h1>
+            <h1 className="mt-3 text-3xl font-black tracking-normal sm:text-4xl">{greeting}, {profile.fullName.split(' ')[0] || 'there'}</h1>
             <p className="mt-3 max-w-2xl text-base leading-7 text-gray-300">
               Your operating rhythm is ready: priorities, decisions, projects, and customer follow-ups in one view.
             </p>

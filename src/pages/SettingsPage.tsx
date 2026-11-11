@@ -1,4 +1,4 @@
-import { BellRing, Building2, CheckCircle2, Smartphone, UserRound } from 'lucide-react';
+import { BellRing, Building2, CheckCircle2, Save, Smartphone, UserRound } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { AuthPanel } from '../components/AuthPanel';
 import { Button } from '../components/Button';
@@ -15,6 +15,8 @@ import {
   updateServerPushPreferences,
 } from '../services/notificationService';
 import { isSupabaseConfigured } from '../services/supabase';
+import { useProfile } from '../hooks/useProfile';
+import { useWorkspace } from '../hooks/useWorkspace';
 
 function Toggle({ checked, label, onChange }: { checked: boolean; label: string; onChange: (checked: boolean) => void }) {
   return (
@@ -26,6 +28,11 @@ function Toggle({ checked, label, onChange }: { checked: boolean; label: string;
 }
 
 export function SettingsPage() {
+  const { profile, loading: profileLoading, error: profileError, save: saveProfile } = useProfile();
+  const { activeWorkspace } = useWorkspace();
+  const [profileDraft, setProfileDraft] = useState(profile);
+  const [profileMessage, setProfileMessage] = useState('');
+  const [profileBusy, setProfileBusy] = useState(false);
   const [preferences, setPreferences] = useNotificationPreferences();
   const [permission, setPermission] = useState(getNotificationPermission());
   const [notificationMessage, setNotificationMessage] = useState('');
@@ -35,6 +42,15 @@ export function SettingsPage() {
   useEffect(() => {
     void getServerPushSubscription().then((subscription) => setServerPushConnected(Boolean(subscription)));
   }, []);
+
+  useEffect(() => { setProfileDraft(profile); }, [profile]);
+
+  async function handleProfileSave() {
+    setProfileBusy(true); setProfileMessage('');
+    try { await saveProfile(profileDraft); setProfileMessage('Profile saved successfully.'); }
+    catch (error) { setProfileMessage(error instanceof Error ? error.message : 'Profile could not be saved.'); }
+    finally { setProfileBusy(false); }
+  }
 
   useEffect(() => {
     if (!serverPushConnected) return;
@@ -116,13 +132,16 @@ export function SettingsPage() {
           <h2 className="mt-4 text-xl font-black text-brand-black">Profile</h2>
           <div className="mt-5 grid gap-4">
             <label className="space-y-2">
-              <span className="text-sm font-semibold text-gray-700">Name</span>
-              <input className="min-h-11 w-full rounded-md border border-gray-200 px-3 outline-none focus:border-brand-orange" defaultValue="John" />
+              <span className="text-sm font-semibold text-gray-700">Full name</span>
+              <input className="control" value={profileDraft.fullName} onChange={(event) => setProfileDraft((current) => ({ ...current, fullName: event.target.value }))} disabled={profileLoading} />
             </label>
             <label className="space-y-2">
-              <span className="text-sm font-semibold text-gray-700">Role</span>
-              <input className="min-h-11 w-full rounded-md border border-gray-200 px-3 outline-none focus:border-brand-orange" defaultValue="Founder" />
+              <span className="text-sm font-semibold text-gray-700">Job title</span>
+              <input className="control" value={profileDraft.jobTitle} onChange={(event) => setProfileDraft((current) => ({ ...current, jobTitle: event.target.value }))} placeholder="Founder, Manager, Accountant..." disabled={profileLoading} />
             </label>
+            <div className="rounded-md bg-gray-50 p-3 text-sm"><span className="text-gray-500">Workspace access:</span> <strong>{activeWorkspace?.role ?? 'Not assigned'}</strong></div>
+            {profileError || profileMessage ? <p className={`rounded-md p-3 text-sm ${profileError ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>{profileError || profileMessage}</p> : null}
+            <Button type="button" onClick={() => void handleProfileSave()} disabled={profileBusy || profileLoading}><Save size={16} />{profileBusy ? 'Saving...' : 'Save profile'}</Button>
           </div>
         </article>
 
