@@ -44,3 +44,13 @@ export async function signOut() {
 
   await supabase.auth.signOut();
 }
+
+export async function sendPasswordReset(email: string) {
+  if (!supabase) throw new Error('Supabase is not configured.');
+  return supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/auth?reset=1` });
+}
+
+export async function updatePassword(password: string) {
+  if (!supabase) throw new Error('Supabase is not configured.');
+  return supabase.auth.updateUser({ password });
+}

@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   NotebookText,
   Settings,
+  ShieldCheck,
   Users,
   UserRoundCog,
   X,
@@ -21,6 +22,7 @@ import { cn } from '../utils/cn';
 import { useWorkspace } from '../hooks/useWorkspace';
 import { canViewModule, type WorkspaceModule } from '../utils/permissions';
 import { planIncludesModule } from '../data/planCatalog';
+import { usePlatformAdmin } from '../hooks/usePlatformAdmin';
 
 const navItems = [
   { label: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -31,6 +33,7 @@ const navItems = [
   { label: 'Reports', href: '/reports', icon: ChartNoAxesCombined },
   { label: 'Team', href: '/team', icon: UserRoundCog },
   { label: 'Billing', href: '/billing', icon: CreditCard },
+  { label: 'Platform Admin', href: '/platform-admin', icon: ShieldCheck, platformOnly: true },
   { label: 'Calendar', href: '/calendar', icon: CalendarDays },
   { label: 'Reminders', href: '/reminders', icon: AlarmClock },
   { label: 'Notes', href: '/notes', icon: NotebookText },
@@ -46,7 +49,8 @@ interface SidebarProps {
 
 export function Sidebar({ open, onClose }: SidebarProps) {
   const { activeWorkspace } = useWorkspace();
-  const visibleItems = navItems.filter((item) => canViewModule(activeWorkspace?.role, item.label as WorkspaceModule) && (['Dashboard', 'Notifications', 'Team', 'Settings', 'Billing'].includes(item.label) || ((!activeWorkspace?.enabledModules.length || activeWorkspace.enabledModules.includes(item.label)) && planIncludesModule(activeWorkspace?.plan, item.label))));
+  const { isPlatformAdmin } = usePlatformAdmin();
+  const visibleItems = navItems.filter((item) => item.platformOnly ? isPlatformAdmin : canViewModule(activeWorkspace?.role, item.label as WorkspaceModule) && (['Dashboard', 'Notifications', 'Team', 'Settings', 'Billing'].includes(item.label) || ((!activeWorkspace?.enabledModules.length || activeWorkspace.enabledModules.includes(item.label)) && planIncludesModule(activeWorkspace?.plan, item.label))));
   return (
     <>
       <aside

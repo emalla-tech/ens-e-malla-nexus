@@ -16,10 +16,13 @@ import { TasksPage } from './pages/TasksPage';
 import { TeamPage } from './pages/TeamPage';
 import { OnboardingPage } from './pages/OnboardingPage';
 import { BillingPage } from './pages/BillingPage';
+import { AuthPage } from './pages/AuthPage';
+import { PlatformAdminPage } from './pages/PlatformAdminPage';
 
 export default function App() {
   return (
     <Routes>
+      <Route path="auth" element={<AuthPage />} />
       <Route element={<AppLayout />}>
         <Route index element={<DashboardPage />} />
         <Route path="tasks" element={<TasksPage />} />
@@ -30,6 +33,7 @@ export default function App() {
         <Route path="reports" element={<ReportsPage />} />
         <Route path="team" element={<TeamPage />} />
         <Route path="billing" element={<BillingPage />} />
+        <Route path="platform-admin" element={<PlatformAdminPage />} />
         <Route path="onboarding" element={<OnboardingPage />} />
         <Route path="calendar" element={<CalendarPage />} />
         <Route path="reminders" element={<RemindersPage />} />

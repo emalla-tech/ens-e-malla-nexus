@@ -1,6 +1,6 @@
 import { Cloud, LogOut, Mail, ShieldCheck } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
-import { signInWithEmail, signOut, signUpWithEmail } from '../services/authService';
+import { sendPasswordReset, signInWithEmail, signOut, signUpWithEmail } from '../services/authService';
 import { isSupabaseConfigured } from '../services/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { Button } from './Button';
@@ -8,7 +8,7 @@ import { Button } from './Button';
 export function AuthPanel() {
   const { loading, user } = useAuth();
   const [mode, setMode] = useState<'sign-in' | 'sign-up'>('sign-in');
-  const [fullName, setFullName] = useState('John');
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
@@ -59,6 +59,17 @@ export function AuthPanel() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function resetPassword() {
+    if (!email.trim()) { setMessage('Enter your email address first.'); return; }
+    setSubmitting(true); setMessage('');
+    try {
+      const response = await sendPasswordReset(email.trim());
+      setMessage(response.error ? response.error.message : 'Password reset instructions were sent to your email.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Password reset could not be sent.');
+    } finally { setSubmitting(false); }
   }
 
   if (!isSupabaseConfigured()) {
@@ -169,6 +180,7 @@ export function AuthPanel() {
         <Button type="submit" disabled={submitting}>
           {submitting ? 'Working...' : mode === 'sign-in' ? 'Sign in' : 'Create account'}
         </Button>
+        {mode === 'sign-in' ? <button type="button" onClick={() => void resetPassword()} disabled={submitting} className="min-h-10 text-sm font-bold text-brand-orange hover:text-orange-700">Forgot password?</button> : null}
       </form>
     </article>
   );

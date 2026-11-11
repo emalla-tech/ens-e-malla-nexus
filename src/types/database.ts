@@ -298,7 +298,10 @@ export interface Database {
     Functions: {
       claim_workspace_invitations: { Args: Record<PropertyKey, never>; Returns: number };
       create_workspace: { Args: { workspace_name: string; workspace_type: string; workspace_country: string; workspace_currency: string; workspace_timezone: string; workspace_industry: string; workspace_modules: string[]; workspace_plan: string }; Returns: string };
+      complete_workspace_setup: { Args: { target_workspace: string; workspace_name: string; workspace_type: string; workspace_country: string; workspace_currency: string; workspace_timezone: string; workspace_industry: string; workspace_modules: string[]; workspace_plan: string }; Returns: undefined };
       workspace_usage_summary: { Args: { target_workspace: string }; Returns: Json };
+      is_platform_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
+      platform_admin_workspace_summary: { Args: Record<PropertyKey, never>; Returns: { workspace_id: string; name: string; workspace_type: string; country: string; industry: string; plan_code: string; subscription_status: string; trial_ends_at: string; current_period_end: string; member_count: number; owner_name: string; owner_email: string; created_at: string }[] };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

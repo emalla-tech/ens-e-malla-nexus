@@ -50,3 +50,8 @@ test('plan capacity increases from Personal to Professional', () => {
   assert.equal(limits.length, 3);
   for (let index = 1; index < limits.length; index += 1) for (let field = 0; field < 3; field += 1) assert.ok(limits[index][field] > limits[index - 1][field]);
 });
+
+test('platform admin is not a workspace role', () => {
+  assert.ok(!roles.includes('Platform Admin'));
+  assert.ok(!Object.hasOwn(matrix.view, 'Platform Admin'));
+});

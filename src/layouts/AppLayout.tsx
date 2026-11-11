@@ -5,11 +5,18 @@ import { Sidebar } from '../components/Sidebar';
 import { useWorkspace } from '../hooks/useWorkspace';
 import { canViewModule, pathModule } from '../utils/permissions';
 import { planIncludesModule } from '../data/planCatalog';
+import { useAuth } from '../hooks/useAuth';
+import { usePlatformAdmin } from '../hooks/usePlatformAdmin';
 
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { activeWorkspace, loading } = useWorkspace();
+  const { cloudReady, loading: authLoading, user } = useAuth();
+  const { isPlatformAdmin, loading: platformLoading } = usePlatformAdmin();
   const location = useLocation();
+
+  if (cloudReady && !authLoading && !user) return <Navigate to="/auth" replace />;
+  if (location.pathname === '/platform-admin' && !platformLoading && !isPlatformAdmin) return <Navigate to="/" replace />;
 
   if (!loading && activeWorkspace && !activeWorkspace.onboardingComplete && location.pathname !== '/onboarding') {
     return <Navigate to="/onboarding" replace />;

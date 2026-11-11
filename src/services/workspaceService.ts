@@ -22,8 +22,7 @@ export interface WorkspaceSetup { name: string; type: 'Personal' | 'Company'; co
 
 export async function completeWorkspaceSetup(workspaceId: string, setup: WorkspaceSetup) {
   if (!supabase) throw new Error('Supabase is not configured.');
-  const slug = `${setup.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${workspaceId.slice(0, 6)}`;
-  const { error } = await supabase.from('workspaces').update({ name: setup.name, slug, type: setup.type, country: setup.country, currency: setup.currency, timezone: setup.timezone, industry: setup.industry, enabled_modules: setup.enabledModules, plan: setup.plan, onboarding_complete: true }).eq('id', workspaceId);
+  const { error } = await supabase.rpc('complete_workspace_setup', { target_workspace: workspaceId, workspace_name: setup.name, workspace_type: setup.type, workspace_country: setup.country, workspace_currency: setup.currency, workspace_timezone: setup.timezone, workspace_industry: setup.industry, workspace_modules: setup.enabledModules, workspace_plan: setup.plan });
   if (error) throw error;
 }
 
